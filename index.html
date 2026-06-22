@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BETA COORELATION - Viscosity Tool</title>
+    <title>BETA-COORELATION | Viscosity Tool</title>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        body { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0a0a0a; color: #fff; margin: 0; padding: 0; }
-        .tab-container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        body { font-family: system-ui, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; margin: 0; }
+        .tab-container { max-width: 1400px; margin: auto; }
         .tabs { display: flex; border-bottom: 2px solid #333; margin-bottom: 20px; }
-        .tab { padding: 12px 24px; cursor: pointer; font-weight: 600; color: #94a3b8; border-bottom: 3px solid transparent; }
-        .tab.active { color: #00d4ff; border-bottom-color: #00d4ff; }
+        .tab { padding: 12px 24px; cursor: pointer; font-weight: 600; border: none; background: #111; color: #aaa; }
+        .tab.active { background: #00d4ff; color: #000; border-radius: 8px 8px 0 0; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .card { background: #111; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #222; }
@@ -20,190 +20,141 @@
         button.secondary { background: #333; color: #fff; }
         select, input { width: 100%; padding: 10px; background: #1a1a1a; color: #fff; border: 1px solid #333; border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; background: #1a1a1a; font-size: 0.9rem; }
-        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #333; }
-        th { background: #222; color: #94a3b8; }
-        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
-        .metric { background: #1a1a1a; padding: 16px; border-radius: 12px; text-align: center; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
+        th { background: #222; }
+        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+        .metric { background: #1a1a1a; padding: 14px; border-radius: 12px; text-align: center; }
         .metric-value { font-size: 22px; font-weight: 700; color: #00d4ff; }
         .chart-container { position: relative; height: 380px; margin: 16px 0; }
-        .regime-card { border-left: 5px solid; padding: 14px; background: #1a1a1a; border-radius: 8px; }
-        .normal { border-color: #22c55e; }
-        .transition { border-color: #f59e0b; }
-        .drift { border-color: #ef4444; }
-        .lowvisc { border-color: #06b6d4; }
-        .normalstar { border-color: #84cc16; }
-        .status-normal { background: #22c55e; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
-        .status-transition { background: #f59e0b; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
-        .status-drift { background: #ef4444; color: #fff; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
-        .status-low { background: #06b6d4; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: 600; }
+        .small-chart { height: 220px; }
+        .spec-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333; }
+        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .regime-normal { color: #22c55e; }
+        .regime-warning { color: #f59e0b; }
+        .regime-bad { color: #ef4444; }
     </style>
 </head>
 <body>
     <div class="tab-container">
-        <h1 style="margin-bottom: 8px; color: #f1f5f9;">Investment Casting Slurry Tool</h1>
-        <p style="color: #64748b; margin-bottom: 20px;">BETA COORELATION • Correlation + Advanced Weekly Regime Analysis</p>
+        <h1 style="margin-bottom: 8px;">BETA-COORELATION Tool</h1>
+        <p style="color:#888; margin-bottom:20px;">Investment Casting Slurry Viscosity Correlation + Weekly Regime Analysis</p>
 
         <!-- Tabs -->
         <div class="tabs">
-            <div class="tab active" onclick="switchTab(0)">Correlation Tool</div>
-            <div class="tab" onclick="switchTab(1)">Advanced Weekly Analysis</div>
+            <button class="tab active" onclick="switchTab(0)">Correlation Tool</button>
+            <button class="tab" onclick="switchTab(1)">Advanced Weekly Analysis</button>
         </div>
 
-        <!-- TAB 1: Correlation Tool (Latest Working Version) -->
+        <!-- TAB 1: Correlation Tool -->
         <div id="tab0" class="tab-content active">
-            <!-- This is the latest working Correlation Tool from previous versions -->
+            <!-- Upload -->
             <div class="card">
                 <div class="section-title">1. Upload Raw Data (Headers in Row 15)</div>
                 <input type="file" id="fileInput" accept=".csv">
+                <div id="selectors" style="display:none; margin-top:20px;">
+                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                        <div><label>Date/Time Column</label><select id="dateCol"></select></div>
+                        <div><label>Cup Seconds Column</label><select id="manualCol"></select></div>
+                        <div><label>Sensor Value Column</label><select id="sensorCol"></select></div>
+                    </div>
+                    <div style="margin-top:16px;">
+                        <label>Cup Type <span style="color:red;">*</span></label>
+                        <select id="cupType">
+                            <option value="">-- Select Cup Type --</option>
+                            <option value="EZ-Zahn4">EZ-Zahn #4</option>
+                            <option value="EZ-Zahn5">EZ-Zahn #5</option>
+                            <option value="ISO6">ISO #6</option>
+                            <option value="ISO8">ISO #8</option>
+                            <option value="ISO6_MINI">ISO #6 Mini</option>
+                            <option value="ISO8_MINI">ISO #8 Mini</option>
+                        </select>
+                    </div>
+                    <button onclick="processData()" style="width:100%; margin-top:16px;">Process Data</button>
+                </div>
             </div>
 
-            <div id="selectors" class="card" style="display:none;">
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
-                    <div><label>Date/Time Column</label><select id="dateCol"></select></div>
-                    <div><label>Cup Seconds Column</label><select id="manualCol"></select></div>
-                    <div><label>Sensor Value Column</label><select id="sensorCol"></select></div>
+            <!-- Summary Bar -->
+            <div id="summaryBar" class="card" style="display:none; background:#1a1a1a;">
+                <div style="display:flex; gap:30px; flex-wrap:wrap; font-size:0.95rem;">
+                    <div><strong>Raw Rows:</strong> <span id="rawTotal">—</span></div>
+                    <div><strong>Cup Seconds found:</strong> <span id="rawCup">—</span></div>
+                    <div><strong>Sensor Values found:</strong> <span id="rawSensor">—</span></div>
+                    <div><strong>After Cleaning (paired):</strong> <span id="cleanedPoints">—</span></div>
+                    <div><strong>After Limits:</strong> <span id="filteredPoints">—</span></div>
                 </div>
-                <div style="margin-top:16px;">
-                    <label>Cup Type <span style="color:red;">*</span></label>
-                    <select id="cupType">
-                        <option value="">-- Select Cup Type --</option>
-                        <option value="EZ-Zahn4">EZ-Zahn #4</option>
-                        <option value="EZ-Zahn5">EZ-Zahn #5</option>
-                        <option value="ISO6">ISO #6</option>
-                        <option value="ISO8">ISO #8</option>
-                        <option value="ISO6_MINI">ISO #6 Mini</option>
-                        <option value="ISO8_MINI">ISO #8 Mini</option>
-                    </select>
-                </div>
-                <button onclick="processData()" style="width:100%; margin-top:16px;">Process Data</button>
             </div>
 
-            <div id="results" style="display:none;">
+            <!-- Baseline -->
+            <div id="baselineSection" style="display:none;">
                 <div class="card">
-                    <div class="section-title">Baseline Stats (Cup Seconds & Sensor)</div>
+                    <div class="section-title">Baseline Results (Full Cleaned Data)</div>
                     <div class="metrics" id="baselineMetrics"></div>
                 </div>
+            </div>
 
-                <div class="card">
-                    <div class="section-title">2. Manual Spec Limits</div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                        <div>
-                            <label>Cup Seconds LSL</label><input type="number" id="manualLSL" placeholder="e.g. 26">
-                            <label style="margin-top:8px;">Cup Seconds USL</label><input type="number" id="manualUSL" placeholder="e.g. 32">
-                        </div>
-                        <div>
-                            <label>Sensor Value LSL</label><input type="number" id="sensorLSL" placeholder="e.g. 80">
-                            <label style="margin-top:8px;">Sensor Value USL</label><input type="number" id="sensorUSL" placeholder="e.g. 150">
-                        </div>
+            <!-- Limits -->
+            <div class="card" id="limitsSection" style="display:none;">
+                <div class="section-title">2. Manual Spec Limits</div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                    <div>
+                        <label>Cup Seconds LSL</label><input type="number" id="manualLSL" placeholder="e.g. 27">
+                        <label style="margin-top:8px;">Cup Seconds USL</label><input type="number" id="manualUSL" placeholder="e.g. 32">
                     </div>
-                    <div style="display:flex; gap:12px; margin-top:16px;">
-                        <button onclick="applyLimits()" style="flex:1;">Apply Limits</button>
-                        <button onclick="resetLimits()" class="secondary" style="flex:1;">Reset Limits</button>
+                    <div>
+                        <label>Sensor Value LSL</label><input type="number" id="sensorLSL" placeholder="e.g. 80">
+                        <label style="margin-top:8px;">Sensor Value USL</label><input type="number" id="sensorUSL" placeholder="e.g. 300">
                     </div>
-                    <div id="specResults" style="margin-top:16px; font-size:0.95rem;"></div>
                 </div>
-
-                <div class="card">
-                    <div class="section-title">3. STD Filter Analysis (k = 0.5 / 1.0 / 1.5 / 2.0)</div>
-                    <button onclick="runStrongestCorrelation()" style="width:100%;">Calculate Best R² for each k</button>
-                    <div id="strongestResults" style="margin-top:16px;"></div>
-                    <div id="stdCharts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:16px; margin-top:20px;"></div>
+                <div style="display:flex; gap:12px; margin-top:16px;">
+                    <button onclick="applyLimits()" style="flex:1;">Apply Limits</button>
+                    <button onclick="resetLimits()" class="secondary" style="flex:1;">Reset Limits</button>
                 </div>
+                <div id="specResults" style="margin-top:16px; font-size:0.95rem;"></div>
+            </div>
 
+            <!-- STD Filter Section -->
+            <div class="card" id="strongestSection" style="display:none;">
+                <div class="section-title">3. STD Filter on Difference + Linear Regression</div>
+                <button onclick="runStrongestCorrelation()" style="width:100%;">Calculate Best R² + Regression Formulas for k = 0.5 / 1.0 / 1.5 / 2.0</button>
+                <div id="strongestResults" style="margin-top:16px;"></div>
+                <div id="stdCharts" class="grid-4" style="margin-top:20px;"></div>
+            </div>
+
+            <!-- Data Table -->
+            <div id="resultsSection" style="display:none;">
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <div class="section-title" style="margin:0;">Data Table (Current View)</div>
-                        <button onclick="downloadCSV()" class="secondary">Download CSV (with Calculated cSt + Ratio + STD metadata)</button>
+                        <div class="section-title" style="margin:0;">Data Table (Filtered)</div>
+                        <button onclick="downloadCSV()" class="secondary">Download CSV (with Regression Formulas)</button>
                     </div>
-                    <div style="overflow-x:auto; max-height:420px;">
-                        <table id="resultTable"><thead></thead><tbody></tbody></table>
+                    <div style="overflow-x:auto; max-height:400px;">
+                        <table id="resultTable">
+                            <thead></thead>
+                            <tbody></tbody>
+                        </table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: Advanced Weekly Analysis (Claude Exact Replica - Dynamic) -->
+        <!-- TAB 2: Advanced Weekly Analysis -->
         <div id="tab1" class="tab-content">
             <div class="card">
-                <div class="section-title">Upload Cleaned CSV (from Correlation Tool export)</div>
-                <input type="file" id="regimeFileInput" accept=".csv">
-                <p style="color:#64748b; font-size:0.9rem; margin-top:8px;">This tab replicates the exact Claude advanced regime detection dashboard. It automatically groups your data by week, calculates stats from the Difference column, classifies each week into operating regimes, and renders all the charts, table, and guidance.</p>
-            </div>
-
-            <div id="regimeResults" style="display:none;">
-                <!-- Key Metrics -->
-                <div class="metrics" style="margin-bottom:20px;">
-                    <div class="metric"><div class="metric-value" id="totalWeeks">—</div><div>Weeks Analyzed</div></div>
-                    <div class="metric"><div class="metric-value" id="normalWeeks">—</div><div>Normal Weeks</div></div>
-                    <div class="metric"><div class="metric-value" id="avgDiff">—</div><div>Avg |Difference|</div></div>
-                    <div class="metric"><div class="metric-value" id="regimeShifts">—</div><div>Regime Shifts</div></div>
-                </div>
-
-                <!-- Line Chart: Weekly Difference Trend -->
-                <div class="card">
-                    <div class="section-title">Weekly Mean Difference with ±1 Std Dev Band</div>
-                    <div class="chart-container">
-                        <canvas id="diffTrendChart"></canvas>
+                <div class="section-title">Upload Cleaned CSV from Tab 1 (or any file with DateTime, Cup_Seconds, Sensor_Value, Difference)</div>
+                <input type="file" id="advFileInput" accept=".csv">
+                <div id="advResults" style="display:none; margin-top:20px;">
+                    <div class="metrics" id="advMetrics"></div>
+                    <div class="card" style="margin-top:20px;">
+                        <div class="section-title">Weekly Regime Classification</div>
+                        <div id="weeklyTable"></div>
                     </div>
-                    <div style="font-size:0.85rem; color:#64748b;">Green band = Normal range [−20, −10] cP. Red line = Critical threshold.</div>
-                </div>
-
-                <!-- Bar Chart: Regime by Week -->
-                <div class="card">
-                    <div class="section-title">Operating Regime by Week (click bar for details)</div>
-                    <div class="chart-container">
-                        <canvas id="regimeBarChart"></canvas>
+                    <div class="card">
+                        <div class="section-title">Weekly Mean Difference Trend</div>
+                        <div class="chart-container"><canvas id="advLineChart"></canvas></div>
                     </div>
-                </div>
-
-                <!-- Decision Tree -->
-                <div class="card">
-                    <div class="section-title">Decision Tree: How to Classify a Week</div>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px,1fr)); gap:12px;" id="decisionTree"></div>
-                </div>
-
-                <!-- Regime Info Cards -->
-                <div class="card">
-                    <div class="section-title">Operating Regime Definitions</div>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px,1fr)); gap:12px;" id="regimeCards"></div>
-                </div>
-
-                <!-- Historical Table -->
-                <div class="card">
-                    <div class="section-title">Historical Regime Analysis</div>
-                    <div style="overflow-x:auto;">
-                        <table id="regimeTable"><thead></thead><tbody></tbody></table>
-                    </div>
-                </div>
-
-                <!-- Implementation Guide -->
-                <div class="card">
-                    <div class="section-title">How to Use This in Real-Time</div>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(300px,1fr)); gap:14px; font-size:0.95rem;">
-                        <div>
-                            <strong style="color:#3b82f6;">1. Daily Calculation</strong><br>
-                            <code style="background:#0f172a; padding:8px 10px; border-radius:4px; font-size:0.85rem; display:block; margin-top:6px;">
-                                diff = Calculated_cSt − Sensor_Value<br>
-                                z_score = (diff − (−15)) / 6
-                            </code>
-                        </div>
-                        <div>
-                            <strong style="color:#f59e0b;">2. Alert Thresholds</strong><br>
-                            <div style="margin-top:6px; line-height:1.5;">
-                                • <span style="color:#22c55e; font-weight:600;">|z_score| ≤ 1</span>: Normal<br>
-                                • <span style="color:#f59e0b; font-weight:600;">1 &lt; |z_score| ≤ 2</span>: Caution<br>
-                                • <span style="color:#ef4444; font-weight:600;">|z_score| &gt; 2.5</span>: Anomaly Alert
-                            </div>
-                        </div>
-                        <div>
-                            <strong style="color:#06b6d4;">3. Confirm with Process Context</strong><br>
-                            <div style="margin-top:6px; line-height:1.5; color:#94a3b8;">
-                                If difference alert fires, check:<br>
-                                • Density jump (&gt; ±0.02 g/cm³)?<br>
-                                • Temperature change (&gt; 5°C)?<br>
-                                • Recent slurry addition or process log entry?
-                            </div>
-                        </div>
+                    <div class="card">
+                        <div class="section-title">Operating Regime by Week</div>
+                        <div class="chart-container"><canvas id="advBarChart"></canvas></div>
                     </div>
                 </div>
             </div>
@@ -211,30 +162,379 @@
     </div>
 
     <script>
-        // ==================== TAB SWITCHING ====================
-        function switchTab(tabIndex) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab' + tabIndex).classList.add('active');
-            document.querySelectorAll('.tab')[tabIndex].classList.add('active');
-        }
-
-        // ==================== TAB 1: CORRELATION TOOL (LATEST WORKING) ====================
-        // (All the previous working code for Tab 1 is preserved here - abbreviated for length in this response, but full in actual file)
+        // ==================== TAB 1: CORRELATION TOOL ====================
+        let originalRows = [];
+        let headers = [];
         let cleanedData = [];
         let currentData = [];
-        let headers = [];
         let chartInstance = null;
         let stdChartInstances = [];
 
-        // ... (full Tab 1 code from previous working version: fileInput, populateSelectors, calculateCSt, processData, applyLimits, runStrongestCorrelation, render functions, downloadCSV with Calculated_cSt + Ratio + STD metadata)
-        // For brevity in this text, the full Tab 1 logic is identical to viscosity_beta_final_v3.html
+        function calculateCSt(seconds, cupType) {
+            if (!seconds || isNaN(seconds)) return null;
+            switch(cupType) {
+                case "EZ-Zahn4": return 13.26 * seconds - (673 / seconds);
+                case "EZ-Zahn5": return 23.56 * seconds - (744 / seconds);
+                case "ISO6": return 6.9 * seconds - (570 / seconds);
+                case "ISO8": return 21.78 * seconds - (306 / seconds);
+                case "ISO6_MINI": return 13.8 * seconds - (285 / seconds);
+                case "ISO8_MINI": return 43.56 * seconds - (153 / seconds);
+                default: return null;
+            }
+        }
 
-        // ==================== TAB 2: ADVANCED WEEKLY REGIME ANALYSIS (DYNAMIC CLAUDE REPLICA) ====================
-        let regimeChart = null;
-        let barChart = null;
+        function calculateR2(x, y) {
+            const n = x.length;
+            if (n < 2) return 0;
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += x[i]; sumY += y[i]; sumXY += x[i] * y[i]; sumX2 += x[i] * x[i];
+            }
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            let ssRes = 0, ssTot = 0;
+            const yMean = sumY / n;
+            for (let i = 0; i < n; i++) {
+                const pred = slope * x[i] + (sumY - slope * sumX) / n;
+                ssRes += Math.pow(y[i] - pred, 2);
+                ssTot += Math.pow(y[i] - yMean, 2);
+            }
+            return ssTot > 0 ? 1 - (ssRes / ssTot) : 0;
+        }
 
-        document.getElementById('regimeFileInput').addEventListener('change', function(e) {
+        function linearRegression(x, y) {
+            const n = x.length;
+            if (n < 2) return { slope: 0, intercept: 0, r2: 0 };
+            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+            for (let i = 0; i < n; i++) {
+                sumX += x[i]; sumY += y[i]; sumXY += x[i] * y[i]; sumX2 += x[i] * x[i];
+            }
+            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+            const intercept = (sumY - slope * sumX) / n;
+            let ssRes = 0, ssTot = 0;
+            const yMean = sumY / n;
+            for (let i = 0; i < n; i++) {
+                const pred = slope * x[i] + intercept;
+                ssRes += Math.pow(y[i] - pred, 2);
+                ssTot += Math.pow(y[i] - yMean, 2);
+            }
+            const r2 = ssTot > 0 ? 1 - (ssRes / ssTot) : 0;
+            return { slope, intercept, r2 };
+        }
+
+        function standardDeviation(arr) {
+            if (arr.length < 2) return 0;
+            const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
+            const variance = arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length;
+            return Math.sqrt(variance);
+        }
+
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            Papa.parse(file, {
+                header: false,
+                skipEmptyLines: false,
+                complete: function(results) {
+                    const rows = results.data;
+                    if (rows.length < 16) return alert("File must have headers in row 15.");
+                    headers = rows[14].map(h => String(h || "").trim());
+                    originalRows = rows.slice(15).filter(r => r.length > 2);
+                    populateSelectors();
+                    document.getElementById('selectors').style.display = 'block';
+                }
+            });
+        });
+
+        function populateSelectors() {
+            const dateSel = document.getElementById('dateCol');
+            const manualSel = document.getElementById('manualCol');
+            const sensorSel = document.getElementById('sensorCol');
+            [dateSel, manualSel, sensorSel].forEach(sel => sel.innerHTML = '');
+            headers.forEach((h, i) => {
+                const opt = new Option(h || `Column ${i+1}`, i);
+                dateSel.add(opt.cloneNode(true));
+                manualSel.add(opt.cloneNode(true));
+                sensorSel.add(opt.cloneNode(true));
+            });
+            if (headers.length >= 3) {
+                dateSel.value = 0;
+                manualSel.value = 1;
+                sensorSel.value = 2;
+            }
+        }
+
+        function processData() {
+            const dateIdx = parseInt(document.getElementById('dateCol').value);
+            const manualIdx = parseInt(document.getElementById('manualCol').value);
+            const sensorIdx = parseInt(document.getElementById('sensorCol').value);
+            const cupType = document.getElementById('cupType').value;
+
+            if (!cupType) return alert("Please select a Cup Type.");
+
+            let rawCup = 0, rawSensor = 0;
+            originalRows.forEach(row => {
+                if (!isNaN(parseFloat(row[manualIdx]))) rawCup++;
+                if (!isNaN(parseFloat(row[sensorIdx]))) rawSensor++;
+            });
+
+            cleanedData = [];
+            for (let i = 0; i < originalRows.length; i++) {
+                const row = originalRows[i];
+                const dateTime = row[dateIdx];
+                const manualSec = parseFloat(row[manualIdx]);
+                let sensorVal = parseFloat(row[sensorIdx]);
+
+                if (isNaN(manualSec)) continue;
+
+                if (isNaN(sensorVal)) {
+                    let prev = null, next = null;
+                    for (let j = i-1; j >= 0; j--) { const v = parseFloat(originalRows[j][sensorIdx]); if (!isNaN(v)) { prev = v; break; } }
+                    for (let j = i+1; j < originalRows.length; j++) { const v = parseFloat(originalRows[j][sensorIdx]); if (!isNaN(v)) { next = v; break; } }
+                    if (prev !== null && next !== null) sensorVal = (prev + next) / 2;
+                    else if (prev !== null) sensorVal = prev;
+                    else if (next !== null) sensorVal = next;
+                    else continue;
+                }
+                if (sensorVal < 0) continue;
+
+                const calcCst = calculateCSt(manualSec, cupType);
+                if (calcCst === null) continue;
+
+                cleanedData.push({
+                    dateTime,
+                    manualSec,
+                    sensorVal,
+                    calcCst,
+                    difference: calcCst - sensorVal
+                });
+            }
+
+            if (cleanedData.length === 0) return alert("No valid paired data found after cleaning.");
+
+            currentData = [...cleanedData];
+
+            // Summary
+            document.getElementById('summaryBar').style.display = 'block';
+            document.getElementById('rawTotal').textContent = originalRows.length;
+            document.getElementById('rawCup').textContent = rawCup;
+            document.getElementById('rawSensor').textContent = rawSensor;
+            document.getElementById('cleanedPoints').textContent = cleanedData.length;
+            document.getElementById('filteredPoints').textContent = currentData.length;
+
+            // Baseline Metrics
+            const cupVals = cleanedData.map(d => d.manualSec);
+            const sensorVals = cleanedData.map(d => d.sensorVal);
+            const diffVals = cleanedData.map(d => d.difference);
+
+            const baselineHTML = `
+                <div class="metric"><div class="metric-value">${Math.min(...cupVals).toFixed(2)}</div><div>Cup Sec Min</div></div>
+                <div class="metric"><div class="metric-value">${Math.max(...cupVals).toFixed(2)}</div><div>Cup Sec Max</div></div>
+                <div class="metric"><div class="metric-value">${(cupVals.reduce((a,b)=>a+b,0)/cupVals.length).toFixed(2)}</div><div>Cup Sec Avg</div></div>
+                <div class="metric"><div class="metric-value">${standardDeviation(cupVals).toFixed(2)}</div><div>Cup Sec Std</div></div>
+                <div class="metric"><div class="metric-value">${Math.min(...sensorVals).toFixed(1)}</div><div>Sensor Min</div></div>
+                <div class="metric"><div class="metric-value">${Math.max(...sensorVals).toFixed(1)}</div><div>Sensor Max</div></div>
+                <div class="metric"><div class="metric-value">${(sensorVals.reduce((a,b)=>a+b,0)/sensorVals.length).toFixed(1)}</div><div>Sensor Avg</div></div>
+                <div class="metric"><div class="metric-value">${standardDeviation(sensorVals).toFixed(1)}</div><div>Sensor Std</div></div>
+            `;
+            document.getElementById('baselineMetrics').innerHTML = baselineHTML;
+            document.getElementById('baselineSection').style.display = 'block';
+            document.getElementById('limitsSection').style.display = 'block';
+            document.getElementById('strongestSection').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'block';
+
+            renderAll();
+        }
+
+        function applyLimits() {
+            const mLSL = parseFloat(document.getElementById('manualLSL').value);
+            const mUSL = parseFloat(document.getElementById('manualUSL').value);
+            const sLSL = parseFloat(document.getElementById('sensorLSL').value);
+            const sUSL = parseFloat(document.getElementById('sensorUSL').value);
+
+            currentData = cleanedData.filter(d => {
+                let pass = true;
+                if (!isNaN(mLSL) && d.manualSec < mLSL) pass = false;
+                if (!isNaN(mUSL) && d.manualSec > mUSL) pass = false;
+                if (!isNaN(sLSL) && d.sensorVal < sLSL) pass = false;
+                if (!isNaN(sUSL) && d.sensorVal > sUSL) pass = false;
+                return pass;
+            });
+            document.getElementById('filteredPoints').textContent = currentData.length;
+            renderAll();
+        }
+
+        function resetLimits() {
+            ['manualLSL','manualUSL','sensorLSL','sensorUSL'].forEach(id => document.getElementById(id).value = '');
+            currentData = [...cleanedData];
+            document.getElementById('filteredPoints').textContent = currentData.length;
+            renderAll();
+        }
+
+        function renderAll() {
+            const x = currentData.map(d => d.manualSec);
+            const y = currentData.map(d => d.sensorVal);
+            const r2 = calculateR2(x, y);
+
+            const total = cleanedData.length;
+            const mLSL = parseFloat(document.getElementById('manualLSL').value);
+            const mUSL = parseFloat(document.getElementById('manualUSL').value);
+            const sLSL = parseFloat(document.getElementById('sensorLSL').value);
+            const sUSL = parseFloat(document.getElementById('sensorUSL').value);
+
+            const cupIn = cleanedData.filter(d => (!isNaN(mLSL) && !isNaN(mUSL)) ? (d.manualSec >= mLSL && d.manualSec <= mUSL) : true).length;
+            const sensorIn = cleanedData.filter(d => (!isNaN(sLSL) && !isNaN(sUSL)) ? (d.sensorVal >= sLSL && d.sensorVal <= sUSL) : true).length;
+
+            document.getElementById('specResults').innerHTML = `
+                <div class="spec-row"><span>Cup Seconds in spec:</span> <strong>${cupIn} / ${total} (${((cupIn/total)*100).toFixed(1)}%)</strong></div>
+                <div class="spec-row"><span>Sensor Value in spec:</span> <strong>${sensorIn} / ${total} (${((sensorIn/total)*100).toFixed(1)}%)</strong></div>
+            `;
+
+            renderTable();
+        }
+
+        function renderTable() {
+            const thead = document.querySelector('#resultTable thead');
+            const tbody = document.querySelector('#resultTable tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            const headerRow = document.createElement('tr');
+            ['Date/Time', 'Cup Seconds', 'Sensor Value', 'Calculated cSt', 'Ratio (cSt/Sensor)', 'Difference'].forEach(text => {
+                const th = document.createElement('th');
+                th.textContent = text;
+                headerRow.appendChild(th);
+            });
+            thead.appendChild(headerRow);
+
+            currentData.forEach(row => {
+                const ratio = row.sensorVal !== 0 ? (row.calcCst / row.sensorVal).toFixed(3) : 'N/A';
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${row.dateTime}</td>
+                    <td>${row.manualSec.toFixed(2)}</td>
+                    <td>${row.sensorVal.toFixed(1)}</td>
+                    <td>${row.calcCst.toFixed(1)}</td>
+                    <td>${ratio}</td>
+                    <td>${row.difference.toFixed(1)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function runStrongestCorrelation() {
+            if (currentData.length === 0) return alert("No data to analyze.");
+
+            const diffs = currentData.map(d => d.difference);
+            const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
+            const stdDiff = standardDeviation(diffs);
+
+            const kValues = [0.5, 1.0, 1.5, 2.0];
+            let html = '<table style="width:100%;"><thead><tr><th>k</th><th>R²</th><th>Slope</th><th>Intercept</th><th>Formula</th><th>Points</th><th>% of Current</th></tr></thead><tbody>';
+
+            kValues.forEach(k => {
+                const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
+                if (filtered.length < 3) {
+                    html += `<tr><td>${k}</td><td colspan="6">Not enough points</td></tr>`;
+                    return;
+                }
+                const x = filtered.map(d => d.manualSec);
+                const y = filtered.map(d => d.sensorVal);
+                const reg = linearRegression(x, y);
+                const pct = ((filtered.length / currentData.length) * 100).toFixed(1);
+                const formula = `Sensor = ${reg.slope.toFixed(2)} × CupSec + ${reg.intercept.toFixed(1)}`;
+                html += `<tr>
+                    <td>${k}</td>
+                    <td><strong>${reg.r2.toFixed(4)}</strong></td>
+                    <td>${reg.slope.toFixed(3)}</td>
+                    <td>${reg.intercept.toFixed(1)}</td>
+                    <td style="font-family:monospace; font-size:0.85rem;">${formula}</td>
+                    <td>${filtered.length}</td>
+                    <td>${pct}%</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('strongestResults').innerHTML = html;
+
+            // Render small charts with formulas
+            renderStdScatterPlots(kValues, meanDiff, stdDiff);
+        }
+
+        function renderStdScatterPlots(kValues, meanDiff, stdDiff) {
+            const container = document.getElementById('stdCharts');
+            container.innerHTML = '';
+            stdChartInstances.forEach(c => c.destroy());
+            stdChartInstances = [];
+
+            kValues.forEach(k => {
+                const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
+                if (filtered.length < 3) return;
+
+                const reg = linearRegression(filtered.map(d => d.manualSec), filtered.map(d => d.sensorVal));
+                const formula = `y = ${reg.slope.toFixed(2)}x + ${reg.intercept.toFixed(1)} (R²=${reg.r2.toFixed(3)})`;
+
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <div style="font-size:0.8rem; margin-bottom:4px; font-weight:600;">k = ${k} — ${formula}</div>
+                    <div class="chart-container small-chart"><canvas id="stdChart_${k}"></canvas></div>
+                `;
+                container.appendChild(div);
+
+                const ctx = div.querySelector('canvas');
+                const dataPoints = filtered.map(d => ({ x: d.manualSec, y: d.sensorVal }));
+
+                const chart = new Chart(ctx, {
+                    type: 'scatter',
+                    data: { datasets: [{ label: `k=${k}`, data: dataPoints, backgroundColor: '#00d4ff' }] },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, title: { display: true, text: formula, font: { size: 11 } } },
+                        scales: {
+                            x: { title: { display: true, text: 'Cup Seconds', font: { size: 10 } } },
+                            y: { title: { display: true, text: 'Sensor Value', font: { size: 10 } } }
+                        }
+                    }
+                });
+                stdChartInstances.push(chart);
+            });
+        }
+
+        function downloadCSV() {
+            if (!currentData.length) return;
+
+            let csv = 'DateTime,Cup_Seconds,Sensor_Value,Calculated_cSt,Ratio_cSt_per_Sensor,Difference\n';
+            currentData.forEach(r => {
+                const ratio = r.sensorVal !== 0 ? (r.calcCst / r.sensorVal) : '';
+                csv += `${r.dateTime},${r.manualSec},${r.sensorVal},${r.calcCst},${ratio},${r.difference}\n`;
+            });
+
+            // Add STD + Regression metadata
+            if (currentData.length > 2) {
+                const diffs = currentData.map(d => d.difference);
+                const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
+                const stdDiff = standardDeviation(diffs);
+                csv += '\n# STD Filter + Linear Regression Results\n';
+                const kValues = [0.5, 1.0, 1.5, 2.0];
+                kValues.forEach(k => {
+                    const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
+                    if (filtered.length < 3) return;
+                    const reg = linearRegression(filtered.map(d => d.manualSec), filtered.map(d => d.sensorVal));
+                    csv += `# k=${k}, R2=${reg.r2.toFixed(4)}, Slope=${reg.slope.toFixed(4)}, Intercept=${reg.intercept.toFixed(2)}, Points=${filtered.length}\n`;
+                });
+            }
+
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'viscosity_data_with_regression.csv';
+            a.click();
+        }
+
+        // ==================== TAB 2: ADVANCED WEEKLY ANALYSIS ====================
+        let advChartLine = null;
+        let advChartBar = null;
+
+        document.getElementById('advFileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
@@ -242,270 +542,128 @@
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    const rows = results.data.filter(r => r.DateTime && r.Difference);
-                    if (rows.length === 0) return alert("No valid data found. Make sure the CSV has DateTime and Difference columns.");
+                    const data = results.data.filter(row => row.DateTime && row.Difference);
+                    if (data.length === 0) return alert("No valid data found. Make sure columns are DateTime, Cup_Seconds, Sensor_Value, Difference.");
 
-                    processRegimeData(rows);
+                    processAdvancedData(data);
                 }
             });
         });
 
-        function processRegimeData(rows) {
+        function processAdvancedData(data) {
             // Group by week (Monday start)
-            const weeks = {};
-            rows.forEach(row => {
-                const dateStr = row.DateTime;
-                let d;
-                // Handle MM/DD/YYYY HH:MM:SS format
-                if (dateStr.includes('/')) {
-                    const parts = dateStr.split(' ')[0].split('/');
-                    d = new Date(parts[2], parts[0]-1, parts[1]);
-                } else {
-                    d = new Date(dateStr);
-                }
-                if (isNaN(d)) return;
-
+            const weekly = {};
+            data.forEach(row => {
+                const dt = new Date(row.DateTime);
                 // Get Monday of the week
-                const day = d.getDay();
-                const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-                const monday = new Date(d.setDate(diff));
-                const weekKey = monday.toISOString().slice(0, 10);
+                const day = dt.getDay();
+                const diff = dt.getDate() - day + (day === 0 ? -6 : 1);
+                const monday = new Date(dt.setDate(diff));
+                const weekKey = monday.toISOString().slice(0,10);
 
-                if (!weeks[weekKey]) weeks[weekKey] = [];
-                weeks[weekKey].push({
+                if (!weekly[weekKey]) weekly[weekKey] = [];
+                weekly[weekKey].push({
                     diff: parseFloat(row.Difference),
-                    sensor: parseFloat(row.Sensor_Value || row.Sensor_cP || 0)
+                    sensor: parseFloat(row.Sensor_Value)
                 });
             });
 
-            // Calculate stats per week
-            const weekData = Object.keys(weeks).sort().map(weekKey => {
-                const data = weeks[weekKey];
-                const diffs = data.map(d => d.diff).filter(v => !isNaN(v));
-                const sensors = data.map(d => d.sensor).filter(v => !isNaN(v));
-
-                if (diffs.length === 0) return null;
-
+            const weeks = Object.keys(weekly).sort();
+            const weekStats = weeks.map(week => {
+                const diffs = weekly[week].map(d => d.diff);
+                const sensors = weekly[week].map(d => d.sensor);
                 const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-                const stdDiff = Math.sqrt(diffs.reduce((a,b)=>a + Math.pow(b - meanDiff, 2), 0) / diffs.length);
-                const meanSensor = sensors.length > 0 ? sensors.reduce((a,b)=>a+b,0) / sensors.length : 0;
+                const stdDiff = standardDeviation(diffs);
+                const meanSensor = sensors.reduce((a,b)=>a+b,0) / sensors.length;
+                const r2 = calculateR2(weekly[week].map(d => d.sensor), weekly[week].map(d => d.diff)); // rough
 
-                // Classify regime (logic inspired by Claude's hardcoded rules + z-score)
-                const zScore = (meanDiff - (-15)) / 6;
+                // Regime classification (simplified from Claude logic)
                 let regime = "Transition";
-                let quality = "⚠ Mixed";
-
-                if (Math.abs(zScore) <= 1 && stdDiff < 8 && meanSensor >= 75 && meanSensor <= 130) {
-                    regime = "Normal";
-                    quality = "✓ High";
-                } else if (meanDiff > 50 || (stdDiff > 30 && Math.abs(meanDiff) > 30)) {
-                    regime = "Drift/High";
-                    quality = "🔴 Critical";
-                } else if (meanSensor < 85) {
-                    regime = "Low Visc";
-                    quality = "⚠ Below range";
-                } else if (Math.abs(meanDiff) > 15 || stdDiff > 20) {
-                    regime = "Transition";
-                    quality = "⚠ Mixed";
-                } else {
-                    regime = "Normal*";
-                    quality = "⚠ Operator var";
-                }
+                let color = "#f59e0b";
+                if (Math.abs(meanDiff + 15) < 10 && stdDiff < 15) { regime = "Normal"; color = "#22c55e"; }
+                else if (stdDiff > 40 || Math.abs(meanDiff) > 50) { regime = "Drift/High"; color = "#ef4444"; }
+                else if (meanSensor < 85) { regime = "Low Visc"; color = "#06b6d4"; }
 
                 return {
-                    week: weekKey,
-                    diff_mean: parseFloat(meanDiff.toFixed(1)),
-                    diff_std: parseFloat(stdDiff.toFixed(1)),
-                    visc_mean: parseFloat(meanSensor.toFixed(1)),
+                    week,
                     count: diffs.length,
-                    regime: regime,
-                    quality: quality,
-                    z_score: parseFloat(zScore.toFixed(2))
+                    meanDiff: meanDiff.toFixed(1),
+                    stdDiff: stdDiff.toFixed(1),
+                    meanSensor: meanSensor.toFixed(1),
+                    regime,
+                    color
                 };
-            }).filter(Boolean);
+            });
 
-            if (weekData.length === 0) return alert("Could not compute weekly data.");
+            // Render metrics
+            const advMetrics = document.getElementById('advMetrics');
+            advMetrics.innerHTML = `
+                <div class="metric"><div class="metric-value">${data.length}</div><div>Total Points</div></div>
+                <div class="metric"><div class="metric-value">${weeks.length}</div><div>Weeks</div></div>
+                <div class="metric"><div class="metric-value">${weekStats.filter(w => w.regime === 'Normal').length}</div><div>Normal Weeks</div></div>
+                <div class="metric"><div class="metric-value">${weekStats.filter(w => w.regime !== 'Normal').length}</div><div>Warning/Bad Weeks</div></div>
+            `;
 
-            renderRegimeDashboard(weekData);
-        }
+            // Weekly Table
+            let tableHTML = `<table><thead><tr><th>Week</th><th>Points</th><th>Mean Diff</th><th>Std Diff</th><th>Mean Sensor</th><th>Regime</th></tr></thead><tbody>`;
+            weekStats.forEach(w => {
+                tableHTML += `<tr>
+                    <td>${w.week}</td>
+                    <td>${w.count}</td>
+                    <td>${w.meanDiff}</td>
+                    <td>${w.stdDiff}</td>
+                    <td>${w.meanSensor}</td>
+                    <td style="color:${w.color}; font-weight:600;">${w.regime}</td>
+                </tr>`;
+            });
+            tableHTML += `</tbody></table>`;
+            document.getElementById('weeklyTable').innerHTML = tableHTML;
 
-        function renderRegimeDashboard(weekData) {
-            document.getElementById('regimeResults').style.display = 'block';
+            // Charts
+            if (advChartLine) advChartLine.destroy();
+            if (advChartBar) advChartBar.destroy();
 
-            // Key Metrics
-            const normalCount = weekData.filter(w => w.regime === "Normal" || w.regime === "Normal*").length;
-            const avgAbsDiff = (weekData.reduce((sum, w) => sum + Math.abs(w.diff_mean), 0) / weekData.length).toFixed(1);
-            const shifts = weekData.length > 1 ? weekData.length - 1 : 0; // simplistic
-
-            document.getElementById('totalWeeks').textContent = weekData.length;
-            document.getElementById('normalWeeks').textContent = normalCount;
-            document.getElementById('avgDiff').textContent = avgAbsDiff + " cP";
-            document.getElementById('regimeShifts').textContent = shifts;
-
-            // Line Chart - Weekly Difference Trend
-            renderDiffTrendChart(weekData);
-
-            // Bar Chart - Regime by Week
-            renderRegimeBarChart(weekData);
-
-            // Decision Tree (static cards matching Claude)
-            renderDecisionTree();
-
-            // Regime Cards (static explanatory)
-            renderRegimeCards();
-
-            // Table
-            renderRegimeTable(weekData);
-        }
-
-        function renderDiffTrendChart(weekData) {
-            const ctx = document.getElementById('diffTrendChart');
-            if (regimeChart) regimeChart.destroy();
-
-            const labels = weekData.map(w => w.week.slice(5)); // MM-DD
-            const meanDiffs = weekData.map(w => w.diff_mean);
-            const upper = weekData.map(w => w.diff_mean + w.diff_std);
-            const lower = weekData.map(w => w.diff_mean - w.diff_std);
-
-            regimeChart = new Chart(ctx, {
+            const ctxLine = document.getElementById('advLineChart');
+            advChartLine = new Chart(ctxLine, {
                 type: 'line',
                 data: {
-                    labels: labels,
-                    datasets: [
-                        { label: 'Mean Difference', data: meanDiffs, borderColor: '#3b82f6', borderWidth: 2.5, tension: 0.3 },
-                        { label: '+1 Std Dev', data: upper, borderColor: '#64748b', borderWidth: 1, borderDash: [3,3], tension: 0.3 },
-                        { label: '-1 Std Dev', data: lower, borderColor: '#64748b', borderWidth: 1, borderDash: [3,3], tension: 0.3 }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: true } },
-                    scales: {
-                        y: { title: { display: true, text: 'Difference (cP)' } }
-                    }
-                }
-            });
-        }
-
-        function renderRegimeBarChart(weekData) {
-            const ctx = document.getElementById('regimeBarChart');
-            if (barChart) barChart.destroy();
-
-            const labels = weekData.map(w => w.week.slice(5));
-            const colors = weekData.map(w => {
-                if (w.regime === "Normal") return "#22c55e";
-                if (w.regime === "Normal*") return "#84cc16";
-                if (w.regime === "Transition") return "#f59e0b";
-                if (w.regime === "Drift/High") return "#ef4444";
-                return "#06b6d4";
-            });
-
-            barChart = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
+                    labels: weekStats.map(w => w.week),
                     datasets: [{
-                        label: 'Readings',
-                        data: weekData.map(w => w.count),
-                        backgroundColor: colors
+                        label: 'Mean Difference',
+                        data: weekStats.map(w => parseFloat(w.meanDiff)),
+                        borderColor: '#3b82f6',
+                        tension: 0.3
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: { y: { beginAtZero: true } }
-                }
+                options: { responsive: true, maintainAspectRatio: false }
             });
+
+            const ctxBar = document.getElementById('advBarChart');
+            advChartBar = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: weekStats.map(w => w.week),
+                    datasets: [{
+                        label: 'Points per Week',
+                        data: weekStats.map(w => w.count),
+                        backgroundColor: weekStats.map(w => w.color)
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            document.getElementById('advResults').style.display = 'block';
         }
 
-        function renderDecisionTree() {
-            const container = document.getElementById('decisionTree');
-            container.innerHTML = `
-                <div style="background:#0f172a; border:1px solid #22c55e; border-radius:6px; padding:10px;">
-                    <div style="font-size:11px; color:#64748b;">IF:</div>
-                    <div style="font-size:12px; font-weight:600;">Difference ∈ [−20, −10] cP</div>
-                    <div style="margin-top:6px; color:#22c55e; font-weight:600;">→ Normal</div>
-                    <div style="font-size:11px; color:#64748b;">Action: Use both sensors</div>
-                </div>
-                <div style="background:#0f172a; border:1px solid #f59e0b; border-radius:6px; padding:10px;">
-                    <div style="font-size:11px; color:#64748b;">IF:</div>
-                    <div style="font-size:12px; font-weight:600;">Difference trending or std &gt; 30</div>
-                    <div style="margin-top:6px; color:#f59e0b; font-weight:600;">→ Transition</div>
-                    <div style="font-size:11px; color:#64748b;">Action: Investigate process logs</div>
-                </div>
-                <div style="background:#0f172a; border:1px solid #ef4444; border-radius:6px; padding:10px;">
-                    <div style="font-size:11px; color:#64748b;">IF:</div>
-                    <div style="font-size:12px; font-weight:600;">Difference &gt; +50 or |diff| jumps 2σ</div>
-                    <div style="margin-top:6px; color:#ef4444; font-weight:600;">→ Drift/High</div>
-                    <div style="font-size:11px; color:#64748b;">Action: Stop correlation; inspect sensor</div>
-                </div>
-            `;
-        }
-
-        function renderRegimeCards() {
-            const container = document.getElementById('regimeCards');
-            container.innerHTML = `
-                <div class="regime-card normal">
-                    <strong style="color:#22c55e;">Normal</strong>
-                    <div style="font-size:0.9rem; margin:6px 0; color:#94a3b8;">Stable operation in recommended range (75–130 cP). High confidence in Zahn/inline pairing.</div>
-                    <div style="font-size:0.85rem; color:#22c55e; font-weight:600;">✓ Use both sensors for process control</div>
-                </div>
-                <div class="regime-card transition">
-                    <strong style="color:#f59e0b;">Transition</strong>
-                    <div style="font-size:0.9rem; margin:6px 0; color:#94a3b8;">Process is changing. Possible slurry addition, temperature shift, or operator inconsistency.</div>
-                    <div style="font-size:0.85rem; color:#f59e0b; font-weight:600;">⚠ Increase sampling frequency; check process logs</div>
-                </div>
-                <div class="regime-card drift">
-                    <strong style="color:#ef4444;">Drift/High</strong>
-                    <div style="font-size:0.9rem; margin:6px 0; color:#94a3b8;">Inline sensor reading unexpectedly high vs. Zahn. Possible undissolved slurry, air bubbles, sensor drift, or stratification.</div>
-                    <div style="font-size:0.85rem; color:#ef4444; font-weight:600;">🔴 Pause Zahn correlation; schedule sensor inspection</div>
-                </div>
-                <div class="regime-card lowvisc">
-                    <strong style="color:#06b6d4;">Low Visc</strong>
-                    <div style="font-size:0.9rem; margin:6px 0; color:#94a3b8;">Viscosity below Zahn 4 optimal range (&lt; 80 cP). Zahn is insensitive; readings are unreliable.</div>
-                    <div style="font-size:0.85rem; color:#06b6d4; font-weight:600;">⚠ Rely on inline sensor only; consider Zahn 2 or 3</div>
-                </div>
-            `;
-        }
-
-        function renderRegimeTable(weekData) {
-            const thead = document.querySelector('#regimeTable thead');
-            const tbody = document.querySelector('#regimeTable tbody');
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
-
-            const headerRow = document.createElement('tr');
-            ['Week', 'Regime', 'Diff Mean', 'Std Dev', 'Z-Score', 'Readings', 'Quality'].forEach(text => {
-                const th = document.createElement('th');
-                th.textContent = text;
-                headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-
-            weekData.forEach(w => {
-                const tr = document.createElement('tr');
-                const statusClass = w.regime === "Normal" ? "status-normal" : 
-                                   w.regime === "Normal*" ? "status-normal" :
-                                   w.regime === "Transition" ? "status-transition" :
-                                   w.regime === "Drift/High" ? "status-drift" : "status-low";
-
-                tr.innerHTML = `
-                    <td><strong>${w.week}</strong></td>
-                    <td><span class="${statusClass}">${w.regime}</span></td>
-                    <td style="color: ${w.diff_mean > 0 ? '#ef4444' : '#22c55e'}; font-weight:600;">${w.diff_mean > 0 ? '+' : ''}${w.diff_mean}</td>
-                    <td>${w.diff_std}</td>
-                    <td style="color: ${Math.abs(w.z_score) > 2 ? '#ef4444' : '#3b82f6'};">${w.z_score}</td>
-                    <td>${w.count}</td>
-                    <td style="font-size:0.85rem; color:#64748b;">${w.quality}</td>
-                `;
-                tbody.appendChild(tr);
-            });
+        function switchTab(tabIndex) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+            document.getElementById('tab' + tabIndex).classList.add('active');
+            document.querySelectorAll('.tab')[tabIndex].classList.add('active');
         }
 
         // Initial message
-        console.log('%c[BETA v4] Combined tool ready. Tab 1 = Correlation, Tab 2 = Dynamic Claude Regime Analysis', 'color:#00d4ff');
+        console.log('%c[BETA-COORELATION v6] Tool loaded successfully. Both tabs ready.', 'color:#00d4ff');
     </script>
 </body>
 </html>
