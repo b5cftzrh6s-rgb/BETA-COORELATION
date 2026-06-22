@@ -3,1007 +3,1059 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BETA Correlation Tool</title>
+    <title>BETA COORELATION • Investment Casting Slurry Tool</title>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@500;600&amp;display=swap');
-        
         :root {
-            --primary: #00d4ff;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #3b82f6;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --danger: #ef4444;
         }
-        
-        body {
-            font-family: 'Inter', system_ui, sans-serif;
-            background: #0a0a0a;
-            color: #fff;
-            margin: 0;
+        body { 
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
             padding: 0;
         }
-        
         .header {
-            background: #111;
-            border-bottom: 1px solid #222;
+            background: #1e293b;
+            border-bottom: 1px solid #334155;
             padding: 16px 24px;
             position: sticky;
             top: 0;
             z-index: 100;
         }
-        
         .tabs {
             display: flex;
             gap: 8px;
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
         }
-        
-        .tab {
-            padding: 12px 28px;
-            border-radius: 9999px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: 1px solid #333;
-            background: #1a1a1a;
-            color: #aaa;
-        }
-        
-        .tab.active {
-            background: #00d4ff;
-            color: #000;
-            border-color: #00d4ff;
-        }
-        
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        
-        .card {
-            background: #111;
-            border-radius: 16px;
-            padding: 24px;
-            margin-bottom: 24px;
-            border: 1px solid #222;
-        }
-        
-        .section-title {
-            color: #00d4ff;
-            font-weight: 600;
-            margin: 0 0 16px 0;
-            font-size: 1.1rem;
-        }
-        
-        button {
-            background: #00d4ff;
-            color: #000;
-            border: none;
-            padding: 12px 24px;
-            border-radius: 9999px;
-            font-weight: 600;
-            cursor: pointer;
-            font-size: 0.95rem;
-        }
-        
-        button.secondary {
-            background: #333;
-            color: #fff;
-        }
-        
-        select, input {
-            width: 100%;
-            padding: 10px 14px;
-            background: #1a1a1a;
-            color: #fff;
-            border: 1px solid #333;
+        .tab-btn {
+            padding: 10px 24px;
             border-radius: 8px;
-            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid #334155;
+            background: transparent;
+            color: var(--muted);
+            transition: all 0.2s;
         }
-        
+        .tab-btn.active {
+            background: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+        .tab-content {
+            display: none;
+            max-width: 1200px;
+            margin: 24px auto;
+            padding: 0 24px;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .card {
+            background: var(--card);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #334155;
+        }
+        .section-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        button {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        button.secondary {
+            background: #334155;
+            color: var(--text);
+        }
+        select, input[type="file"] {
+            background: #0f172a;
+            color: var(--text);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 10px;
+            width: 100%;
+        }
         table {
             width: 100%;
             border-collapse: collapse;
-            background: #1a1a1a;
-            font-size: 0.9rem;
+            font-size: 13px;
         }
-        
         th, td {
-            padding: 12px 14px;
+            padding: 10px 12px;
             text-align: left;
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #334155;
         }
-        
         th {
-            background: #222;
+            background: #0f172a;
+            color: #64748b;
             font-weight: 600;
         }
-        
-        .metrics {
+        .metric-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
             gap: 12px;
         }
-        
         .metric {
-            background: #1a1a1a;
-            padding: 16px;
-            border-radius: 12px;
+            background: #0f172a;
+            padding: 14px;
+            border-radius: 8px;
             text-align: center;
         }
-        
         .metric-value {
             font-size: 22px;
             font-weight: 700;
-            color: #00d4ff;
+            color: var(--accent);
         }
-        
-        .metric-label {
-            font-size: 0.8rem;
-            color: #888;
-            margin-top: 4px;
+        .status-normal { color: var(--success); font-weight: 600; }
+        .status-warning { color: var(--warning); font-weight: 600; }
+        .status-bad { color: var(--danger); font-weight: 600; }
+        .issue-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 14px;
+            cursor: pointer;
+            transition: border-color 0.2s;
         }
-        
+        .issue-card:hover {
+            border-color: var(--accent);
+        }
+        .issue-card.active {
+            border-color: var(--accent);
+            background: #1e3a5f;
+        }
         .chart-container {
             position: relative;
             height: 380px;
-            margin: 16px 0;
+            margin-top: 12px;
         }
-        
-        .status-normal { background: #052e16; color: #4ade80; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-        .status-warning { background: #431407; color: #fb923c; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-        .status-bad { background: #450a0a; color: #f87171; padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
-        
-        .issue-card {
-            border: 1px solid #333;
-            border-radius: 12px;
-            padding: 16px;
-            cursor: pointer;
-            transition: all 0.2s;
+        .small-chart {
+            height: 220px;
         }
-        
-        .issue-card:hover {
-            border-color: #00d4ff;
-        }
-        
-        .issue-card.active {
-            border-color: #00d4ff;
-            background: #1a2a3a;
-        }
-        
-        .nav {
+        .week-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            padding: 8px 0;
+            border-bottom: 1px solid #334155;
         }
-        
-        .hidden { display: none !important; }
+        .week-row:last-child {
+            border-bottom: none;
+        }
     </style>
 </head>
 <body>
-    <!-- Header with Tabs -->
-    <div class="header">
-        <div class="container" style="padding-top:0; padding-bottom:0;">
-            <div style="display:flex; align-items:center; justify-content:space-between;">
-                <div>
-                    <h1 style="margin:0; font-size:1.5rem; font-weight:700;">Investment Casting Slurry Tool</h1>
-                    <div style="color:#666; font-size:0.85rem;">BETA Correlation • v2.0</div>
-                </div>
-                <div class="tabs">
-                    <div onclick="switchTab(0)" class="tab active" id="tab0">Correlation Tool</div>
-                    <div onclick="switchTab(1)" class="tab" id="tab1">Advanced Weekly Analysis</div>
-                </div>
+
+<!-- HEADER -->
+<div class="header">
+    <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; justify-content:space-between;">
+        <div>
+            <div style="font-size:11px; color:#64748b; letter-spacing:1px;">KOHLER WATERS SPAS • INVESTMENT CASTING</div>
+            <h1 style="margin:4px 0 0; font-size:22px; font-weight:700;">BETA COORELATION TOOL</h1>
+        </div>
+        <div style="display:flex; gap:8px;">
+            <button onclick="switchTab(0)" id="tab0-btn" class="tab-btn active">1. Correlation Tool</button>
+            <button onclick="switchTab(1)" id="tab1-btn" class="tab-btn">2. Advanced Weekly Analysis</button>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 1: CORRELATION TOOL -->
+<div id="tab0" class="tab-content active">
+    <div class="card">
+        <div class="section-title">Upload Raw Data (Headers in Row 15)</div>
+        <input type="file" id="fileInput" accept=".csv">
+    </div>
+
+    <div id="selectors" class="card" style="display:none;">
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+            <div>
+                <label style="font-size:12px; color:#64748b;">Date/Time Column</label>
+                <select id="dateCol"></select>
             </div>
+            <div>
+                <label style="font-size:12px; color:#64748b;">Cup Seconds Column</label>
+                <select id="manualCol"></select>
+            </div>
+            <div>
+                <label style="font-size:12px; color:#64748b;">Sensor Value Column</label>
+                <select id="sensorCol"></select>
+            </div>
+        </div>
+        
+        <div style="margin-top:16px;">
+            <label style="font-size:12px; color:#64748b;">Cup Type <span style="color:#ef4444;">*</span></label>
+            <select id="cupType">
+                <option value="">-- Select Cup Type --</option>
+                <option value="EZ-Zahn4">EZ-Zahn #4</option>
+                <option value="EZ-Zahn5">EZ-Zahn #5</option>
+                <option value="ISO6">ISO #6</option>
+                <option value="ISO8">ISO #8</option>
+                <option value="ISO6_MINI">ISO #6 Mini</option>
+                <option value="ISO8_MINI">ISO #8 Mini</option>
+            </select>
+        </div>
+        
+        <button onclick="processData()" style="width:100%; margin-top:16px; padding:14px;">Process Data</button>
+    </div>
+
+    <!-- Baseline -->
+    <div id="baselineSection" style="display:none;">
+        <div class="card">
+            <div class="section-title">Baseline Results</div>
+            <div class="metric-grid" id="baselineMetrics"></div>
         </div>
     </div>
 
-    <div class="container">
-
-        <!-- ==================== TAB 0: CORRELATION TOOL ==================== -->
-        <div id="tabContent0">
-            <!-- Upload Section -->
-            <div class="card">
-                <div class="section-title">1. Upload Raw Data (Headers in Row 15)</div>
-                <input type="file" id="fileInput" accept=".csv">
-                
-                <div id="selectors" style="display:none; margin-top:20px;">
-                    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:14px;">
-                        <div>
-                            <label style="font-size:0.85rem; color:#aaa;">Date/Time Column</label>
-                            <select id="dateCol"></select>
-                        </div>
-                        <div>
-                            <label style="font-size:0.85rem; color:#aaa;">Cup Seconds Column</label>
-                            <select id="manualCol"></select>
-                        </div>
-                        <div>
-                            <label style="font-size:0.85rem; color:#aaa;">Sensor Value Column</label>
-                            <select id="sensorCol"></select>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top:16px; max-width:320px;">
-                        <label style="font-size:0.85rem; color:#aaa;">Cup Type <span style="color:#f87171;">*</span></label>
-                        <select id="cupType">
-                            <option value="">-- Select Cup Type --</option>
-                            <option value="EZ-Zahn4">EZ-Zahn #4</option>
-                            <option value="EZ-Zahn5">EZ-Zahn #5</option>
-                            <option value="ISO6">ISO #6</option>
-                            <option value="ISO8">ISO #8</option>
-                            <option value="ISO6_MINI">ISO #6 Mini</option>
-                            <option value="ISO8_MINI">ISO #8 Mini</option>
-                        </select>
-                    </div>
-                    
-                    <button onclick="processData()" style="margin-top:20px; width:100%;">Process Data</button>
-                </div>
+    <!-- Limits -->
+    <div id="limitsSection" class="card" style="display:none;">
+        <div class="section-title">Manual Spec Limits</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+            <div>
+                <label>Cup Seconds LSL</label>
+                <input type="number" id="manualLSL" placeholder="e.g. 26">
+                <label style="margin-top:8px;">Cup Seconds USL</label>
+                <input type="number" id="manualUSL" placeholder="e.g. 32">
             </div>
-
-            <!-- Summary Bar -->
-            <div id="summaryBar" class="card" style="display:none; background:#1a1a1a;">
-                <div style="display:flex; flex-wrap:wrap; gap:24px; font-size:0.9rem;">
-                    <div><strong>Raw rows:</strong> <span id="rawTotal">—</span></div>
-                    <div><strong>Cup readings:</strong> <span id="rawCup">—</span></div>
-                    <div><strong>Sensor readings:</strong> <span id="rawSensor">—</span></div>
-                    <div><strong>Paired after cleaning:</strong> <span id="cleanedPoints">—</span></div>
-                    <div><strong>After limits:</strong> <span id="filteredPoints">—</span></div>
-                </div>
+            <div>
+                <label>Sensor Value LSL</label>
+                <input type="number" id="sensorLSL" placeholder="e.g. 80">
+                <label style="margin-top:8px;">Sensor Value USL</label>
+                <input type="number" id="sensorUSL" placeholder="e.g. 150">
             </div>
+        </div>
+        <div style="display:flex; gap:12px; margin-top:16px;">
+            <button onclick="applyLimits()" style="flex:1;">Apply Limits</button>
+            <button onclick="resetLimits()" class="secondary" style="flex:1;">Reset Limits</button>
+        </div>
+        <div id="specResults" style="margin-top:16px; font-size:14px;"></div>
+    </div>
 
-            <!-- Baseline Results -->
-            <div id="baselineSection" style="display:none;">
-                <div class="card">
-                    <div class="section-title">Baseline Results</div>
-                    <div class="metrics">
-                        <div class="metric">
-                            <div class="metric-value" id="baselineR2">—</div>
-                            <div class="metric-label">R² (Overall)</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value" id="baselineStd">—</div>
-                            <div class="metric-label">Std Dev of Difference</div>
-                        </div>
-                        <div class="metric">
-                            <div class="metric-value" id="baselinePoints">—</div>
-                            <div class="metric-label">Paired Points</div>
-                        </div>
-                    </div>
-                    
-                    <div style="margin-top:20px; display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                        <!-- Cup Seconds Stats -->
-                        <div style="background:#1a1a1a; padding:16px; border-radius:12px;">
-                            <div style="font-weight:600; margin-bottom:8px; color:#00d4ff;">Cup Seconds</div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.9rem;">
-                                <div>Min: <strong id="cupMin">—</strong></div>
-                                <div>Max: <strong id="cupMax">—</strong></div>
-                                <div>Average: <strong id="cupAvg">—</strong></div>
-                                <div>Std Dev: <strong id="cupStd">—</strong></div>
-                            </div>
-                        </div>
-                        
-                        <!-- Sensor Stats -->
-                        <div style="background:#1a1a1a; padding:16px; border-radius:12px;">
-                            <div style="font-weight:600; margin-bottom:8px; color:#00d4ff;">Sensor Value</div>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.9rem;">
-                                <div>Min: <strong id="sensorMin">—</strong></div>
-                                <div>Max: <strong id="sensorMax">—</strong></div>
-                                <div>Average: <strong id="sensorAvg">—</strong></div>
-                                <div>Std Dev: <strong id="sensorStd">—</strong></div>
-                            </div>
-                        </div>
-                    </div>
+    <!-- STD Filter Section -->
+    <div id="strongestSection" class="card" style="display:none;">
+        <div class="section-title">Strongest Correlation (Difference STD Filter)</div>
+        <button onclick="runStrongestCorrelation()" style="width:100%;">Calculate Best R² for k = 0.5 / 1.0 / 1.5 / 2.0</button>
+        <div id="strongestResults" style="margin-top:16px;"></div>
+        <div id="stdCharts" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-top:20px;"></div>
+    </div>
+
+    <!-- Data Table -->
+    <div id="resultsSection" class="card" style="display:none;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <div class="section-title" style="margin:0;">Data Table</div>
+            <button onclick="downloadCSV()" class="secondary">Download CSV</button>
+        </div>
+        <div style="overflow-x:auto; max-height:420px;">
+            <table id="resultTable">
+                <thead></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 2: ADVANCED WEEKLY ANALYSIS (Claude-style, dynamic) -->
+<div id="tab1" class="tab-content">
+    <div class="card">
+        <div class="section-title">Upload Cleaned CSV from Tab 1</div>
+        <input type="file" id="advFileInput" accept=".csv">
+        <div style="margin-top:8px; font-size:12px; color:#64748b;">
+            This tab expects the CSV exported from the Correlation Tool (DateTime, Cup_Seconds, Sensor_Value, Difference)
+        </div>
+    </div>
+
+    <div id="advResults" style="display:none;">
+        
+        <!-- Summary -->
+        <div class="card">
+            <div class="section-title">Overall Summary</div>
+            <div class="metric-grid">
+                <div class="metric">
+                    <div class="metric-value" id="advTotalPoints">—</div>
+                    <div style="font-size:12px; color:#64748b;">Total Paired Points</div>
                 </div>
-            </div>
-
-            <!-- Manual Limits -->
-            <div class="card" id="limitsSection" style="display:none;">
-                <div class="section-title">2. Manual Spec Limits</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                    <div>
-                        <label>Cup Seconds LSL</label>
-                        <input type="number" id="manualLSL" placeholder="e.g. 26">
-                        <label style="margin-top:10px;">Cup Seconds USL</label>
-                        <input type="number" id="manualUSL" placeholder="e.g. 32">
-                    </div>
-                    <div>
-                        <label>Sensor Value LSL</label>
-                        <input type="number" id="sensorLSL" placeholder="e.g. 80">
-                        <label style="margin-top:10px;">Sensor Value USL</label>
-                        <input type="number" id="sensorUSL" placeholder="e.g. 150">
-                    </div>
+                <div class="metric">
+                    <div class="metric-value" id="advOverallR2">—</div>
+                    <div style="font-size:12px; color:#64748b;">Overall R²</div>
                 </div>
-                <div style="display:flex; gap:12px; margin-top:16px;">
-                    <button onclick="applyLimits()" style="flex:1;">Apply Limits</button>
-                    <button onclick="resetLimits()" class="secondary" style="flex:1;">Reset Limits</button>
+                <div class="metric">
+                    <div class="metric-value" id="advMeanDiff">—</div>
+                    <div style="font-size:12px; color:#64748b;">Mean |Difference|</div>
                 </div>
-                <div id="specResults" style="margin-top:16px; font-size:0.95rem;"></div>
-            </div>
-
-            <!-- STD Filter Section -->
-            <div class="card" id="strongestSection" style="display:none;">
-                <div class="section-title">3. Strongest Correlation (Difference STD Filter)</div>
-                <button onclick="runStrongestCorrelation()" style="width:100%;">Calculate Best R² for k = 0.5 / 1.0 / 1.5 / 2.0</button>
-                <div id="strongestResults" style="margin-top:16px;"></div>
-                <div id="stdCharts" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap:16px; margin-top:20px;"></div>
-            </div>
-
-            <!-- Data Table -->
-            <div id="resultsSection" style="display:none;">
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <div class="section-title" style="margin:0;">Data Table</div>
-                        <button onclick="downloadCSV()" class="secondary">Download CSV</button>
-                    </div>
-                    <div style="overflow-x:auto; max-height:420px;">
-                        <table id="resultTable">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
+                <div class="metric">
+                    <div class="metric-value" id="advStdDiff">—</div>
+                    <div style="font-size:12px; color:#64748b;">Std Dev of Difference</div>
                 </div>
             </div>
         </div>
 
-        <!-- ==================== TAB 1: ADVANCED WEEKLY ANALYSIS ==================== -->
-        <div id="tabContent1" style="display:none;">
-            <div class="card">
-                <div class="section-title">Upload Cleaned CSV from Correlation Tool</div>
-                <input type="file" id="advancedFileInput" accept=".csv">
-                <div style="margin-top:12px; font-size:0.85rem; color:#888;">
-                    Upload the CSV you exported from the Correlation Tool tab. It will automatically group data by week and identify Normal vs Warning vs Not Normal periods.
+        <!-- Weekly Status -->
+        <div class="card">
+            <div class="section-title">Weekly Status</div>
+            <div id="weeklyTable"></div>
+        </div>
+
+        <!-- Charts -->
+        <div class="card">
+            <div style="display:flex; gap:12px; margin-bottom:12px;">
+                <button onclick="showAdvView('scatter')" id="advScatterBtn" class="secondary" style="flex:1;">Scatter Plot</button>
+                <button onclick="showAdvView('timeline')" id="advTimelineBtn" class="secondary" style="flex:1;">Weekly Timeline</button>
+            </div>
+            
+            <div id="advScatterView">
+                <div class="chart-container">
+                    <canvas id="advScatterChart"></canvas>
                 </div>
             </div>
-
-            <div id="advancedResults" style="display:none;">
-                <!-- Weekly Summary Table -->
-                <div class="card">
-                    <div class="section-title">Weekly Status Overview</div>
-                    <div style="overflow-x:auto;">
-                        <table id="weeklyTable">
-                            <thead>
-                                <tr>
-                                    <th>Week</th>
-                                    <th>Points</th>
-                                    <th>Mean Sensor</th>
-                                    <th>Std Dev</th>
-                                    <th>Mean |Diff|</th>
-                                    <th>R²</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <!-- Charts -->
-                <div class="card">
-                    <div style="display:flex; gap:12px; margin-bottom:12px;">
-                        <button onclick="showAdvancedView('scatter')" class="secondary" id="btnScatter">Scatter Plot</button>
-                        <button onclick="showAdvancedView('timeline')" class="secondary" id="btnTimeline">Weekly Timeline</button>
-                    </div>
-                    
-                    <div id="advancedScatterView">
-                        <div class="chart-container">
-                            <canvas id="advancedScatterChart"></canvas>
-                        </div>
-                    </div>
-                    
-                    <div id="advancedTimelineView" style="display:none;">
-                        <div class="chart-container">
-                            <canvas id="advancedTimelineChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Issue Detection -->
-                <div class="card">
-                    <div class="section-title">Automated Issue Detection</div>
-                    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px;" id="issueCards"></div>
+            
+            <div id="advTimelineView" style="display:none;">
+                <div class="chart-container">
+                    <canvas id="advTimelineChart"></canvas>
                 </div>
             </div>
+        </div>
+
+        <!-- Issue Detection -->
+        <div class="card">
+            <div class="section-title">Automated Issue Detection</div>
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(280px,1fr)); gap:12px;" id="issueCards"></div>
         </div>
 
     </div>
+</div>
 
-    <script>
-        // ==================== GLOBAL VARIABLES ====================
-        let originalRows = [];
-        let headers = [];
-        let cleanedData = [];
-        let currentData = [];
-        let chartInstance = null;
-        let stdChartInstances = [];
-        let advancedData = [];
-        let weeklyData = [];
-        let advancedChartInstance = null;
-
-        // ==================== TAB SWITCHING ====================
-        function switchTab(tabIndex) {
-            // Hide all content
-            document.getElementById('tabContent0').style.display = 'none';
-            document.getElementById('tabContent1').style.display = 'none';
-            
-            // Remove active from all tabs
-            document.getElementById('tab0').classList.remove('active');
-            document.getElementById('tab1').classList.remove('active');
-            
-            if (tabIndex === 0) {
-                document.getElementById('tabContent0').style.display = 'block';
-                document.getElementById('tab0').classList.add('active');
-            } else {
-                document.getElementById('tabContent1').style.display = 'block';
-                document.getElementById('tab1').classList.add('active');
-            }
+<script>
+    // ==================== TAB SWITCHING ====================
+    function switchTab(tabIndex) {
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+        
+        if (tabIndex === 0) {
+            document.getElementById('tab0').classList.add('active');
+            document.getElementById('tab0-btn').classList.add('active');
+        } else {
+            document.getElementById('tab1').classList.add('active');
+            document.getElementById('tab1-btn').classList.add('active');
         }
+    }
 
-        // ==================== CORRELATION TOOL LOGIC ====================
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
+    // ==================== TAB 1: CORRELATION TOOL (Your working version) ====================
+    let cleanedData = [];
+    let currentData = [];
+    let headers = [];
+    let chartInstance = null;
+    let stdChartInstances = [];
 
-            Papa.parse(file, {
-                header: false,
-                skipEmptyLines: false,
-                complete: function(results) {
-                    const rows = results.data;
-                    if (rows.length < 16) {
-                        alert("File must have headers in row 15 and data below.");
-                        return;
-                    }
-                    headers = rows[14].map(h => String(h || "").trim());
-                    originalRows = rows.slice(15).filter(r => r.length > 2);
-                    
-                    populateSelectors();
-                    document.getElementById('selectors').style.display = 'block';
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: false,
+            skipEmptyLines: false,
+            complete: function(results) {
+                const rows = results.data;
+                if (rows.length < 16) {
+                    alert("File must have headers in row 15.");
+                    return;
                 }
-            });
+                headers = rows[14].map(h => String(h || "").trim());
+                originalRows = rows.slice(15).filter(r => r.length > 2);
+                
+                populateSelectors();
+                document.getElementById('selectors').style.display = 'block';
+            }
         });
+    });
 
-        function populateSelectors() {
-            const dateSel = document.getElementById('dateCol');
-            const manualSel = document.getElementById('manualCol');
-            const sensorSel = document.getElementById('sensorCol');
-            
-            [dateSel, manualSel, sensorSel].forEach(sel => sel.innerHTML = '');
+    let originalRows = [];
 
+    function populateSelectors() {
+        const selects = ['dateCol', 'manualCol', 'sensorCol'];
+        selects.forEach(id => {
+            const sel = document.getElementById(id);
+            sel.innerHTML = '';
             headers.forEach((h, i) => {
                 const opt = new Option(h || `Column ${i+1}`, i);
-                dateSel.add(opt.cloneNode(true));
-                manualSel.add(opt.cloneNode(true));
-                sensorSel.add(opt.cloneNode(true));
-            });
-
-            if (headers.length >= 3) {
-                dateSel.value = 0;
-                manualSel.value = 1;
-                sensorSel.value = 2;
-            }
-        }
-
-        function calculateCSt(seconds, cupType) {
-            if (!seconds || isNaN(seconds)) return null;
-            switch(cupType) {
-                case "EZ-Zahn4": return 13.26 * seconds - (673 / seconds);
-                case "EZ-Zahn5": return 23.56 * seconds - (744 / seconds);
-                case "ISO6": return 6.9 * seconds - (570 / seconds);
-                case "ISO8": return 21.78 * seconds - (306 / seconds);
-                case "ISO6_MINI": return 13.8 * seconds - (285 / seconds);
-                case "ISO8_MINI": return 43.56 * seconds - (153 / seconds);
-                default: return null;
-            }
-        }
-
-        function processData() {
-            const dateIdx = parseInt(document.getElementById('dateCol').value);
-            const manualIdx = parseInt(document.getElementById('manualCol').value);
-            const sensorIdx = parseInt(document.getElementById('sensorCol').value);
-            const cupType = document.getElementById('cupType').value;
-
-            if (!cupType) {
-                alert("Please select a Cup Type.");
-                return;
-            }
-
-            let rawCup = 0, rawSensor = 0;
-            originalRows.forEach(row => {
-                if (!isNaN(parseFloat(row[manualIdx]))) rawCup++;
-                if (!isNaN(parseFloat(row[sensorIdx]))) rawSensor++;
-            });
-
-            cleanedData = [];
-
-            for (let i = 0; i < originalRows.length; i++) {
-                const row = originalRows[i];
-                const dateTime = row[dateIdx];
-                const manualSec = parseFloat(row[manualIdx]);
-                let sensorVal = parseFloat(row[sensorIdx]);
-
-                if (isNaN(manualSec)) continue;
-
-                if (isNaN(sensorVal)) {
-                    let prev = null, next = null;
-                    for (let j = i-1; j >= 0; j--) {
-                        const v = parseFloat(originalRows[j][sensorIdx]);
-                        if (!isNaN(v)) { prev = v; break; }
-                    }
-                    for (let j = i+1; j < originalRows.length; j++) {
-                        const v = parseFloat(originalRows[j][sensorIdx]);
-                        if (!isNaN(v)) { next = v; break; }
-                    }
-                    if (prev !== null && next !== null) sensorVal = (prev + next) / 2;
-                    else if (prev !== null) sensorVal = prev;
-                    else if (next !== null) sensorVal = next;
-                    else continue;
-                }
-
-                if (sensorVal < 0) continue;
-
-                const calcCst = calculateCSt(manualSec, cupType);
-                if (calcCst === null) continue;
-
-                cleanedData.push({
-                    dateTime: dateTime,
-                    manualSec: manualSec,
-                    sensorVal: sensorVal,
-                    calcCst: calcCst,
-                    difference: calcCst - sensorVal
-                });
-            }
-
-            if (cleanedData.length === 0) {
-                alert("No valid paired data found after cleaning.");
-                return;
-            }
-
-            currentData = [...cleanedData];
-
-            // Update summary
-            document.getElementById('summaryBar').style.display = 'block';
-            document.getElementById('rawTotal').textContent = originalRows.length;
-            document.getElementById('rawCup').textContent = rawCup;
-            document.getElementById('rawSensor').textContent = rawSensor;
-            document.getElementById('cleanedPoints').textContent = cleanedData.length;
-            document.getElementById('filteredPoints').textContent = currentData.length;
-
-            // Baseline metrics
-            const x = currentData.map(d => d.manualSec);
-            const y = currentData.map(d => d.sensorVal);
-            const r2 = calculateR2(x, y);
-            const stdDiff = standardDeviation(currentData.map(d => d.difference));
-
-            document.getElementById('baselineR2').textContent = r2.toFixed(3);
-            document.getElementById('baselineStd').textContent = stdDiff.toFixed(2);
-            document.getElementById('baselinePoints').textContent = currentData.length;
-
-            // Cup stats
-            const cupVals = currentData.map(d => d.manualSec);
-            document.getElementById('cupMin').textContent = Math.min(...cupVals).toFixed(2);
-            document.getElementById('cupMax').textContent = Math.max(...cupVals).toFixed(2);
-            document.getElementById('cupAvg').textContent = (cupVals.reduce((a,b)=>a+b,0) / cupVals.length).toFixed(2);
-            document.getElementById('cupStd').textContent = standardDeviation(cupVals).toFixed(2);
-
-            // Sensor stats
-            const sensorVals = currentData.map(d => d.sensorVal);
-            document.getElementById('sensorMin').textContent = Math.min(...sensorVals).toFixed(1);
-            document.getElementById('sensorMax').textContent = Math.max(...sensorVals).toFixed(1);
-            document.getElementById('sensorAvg').textContent = (sensorVals.reduce((a,b)=>a+b,0) / sensorVals.length).toFixed(1);
-            document.getElementById('sensorStd').textContent = standardDeviation(sensorVals).toFixed(1);
-
-            document.getElementById('baselineSection').style.display = 'block';
-            document.getElementById('limitsSection').style.display = 'block';
-            document.getElementById('strongestSection').style.display = 'block';
-            document.getElementById('resultsSection').style.display = 'block';
-
-            renderAll();
-        }
-
-        function applyLimits() {
-            const mLSL = parseFloat(document.getElementById('manualLSL').value);
-            const mUSL = parseFloat(document.getElementById('manualUSL').value);
-            const sLSL = parseFloat(document.getElementById('sensorLSL').value);
-            const sUSL = parseFloat(document.getElementById('sensorUSL').value);
-
-            currentData = cleanedData.filter(d => {
-                let pass = true;
-                if (!isNaN(mLSL) && d.manualSec < mLSL) pass = false;
-                if (!isNaN(mUSL) && d.manualSec > mUSL) pass = false;
-                if (!isNaN(sLSL) && d.sensorVal < sLSL) pass = false;
-                if (!isNaN(sUSL) && d.sensorVal > sUSL) pass = false;
-                return pass;
-            });
-
-            document.getElementById('filteredPoints').textContent = currentData.length;
-            renderAll();
-        }
-
-        function resetLimits() {
-            document.getElementById('manualLSL').value = '';
-            document.getElementById('manualUSL').value = '';
-            document.getElementById('sensorLSL').value = '';
-            document.getElementById('sensorUSL').value = '';
-            currentData = [...cleanedData];
-            document.getElementById('filteredPoints').textContent = currentData.length;
-            renderAll();
-        }
-
-        function renderAll() {
-            const x = currentData.map(d => d.manualSec);
-            const y = currentData.map(d => d.sensorVal);
-            const r2 = calculateR2(x, y);
-
-            const total = cleanedData.length;
-            const mLSL = parseFloat(document.getElementById('manualLSL').value);
-            const mUSL = parseFloat(document.getElementById('manualUSL').value);
-            const sLSL = parseFloat(document.getElementById('sensorLSL').value);
-            const sUSL = parseFloat(document.getElementById('sensorUSL').value);
-
-            const cupIn = cleanedData.filter(d => (!isNaN(mLSL) && !isNaN(mUSL)) ? (d.manualSec >= mLSL && d.manualSec <= mUSL) : true).length;
-            const sensorIn = cleanedData.filter(d => (!isNaN(sLSL) && !isNaN(sUSL)) ? (d.sensorVal >= sLSL && d.sensorVal <= sUSL) : true).length;
-
-            document.getElementById('specResults').innerHTML = `
-                <div style="display:flex; gap:20px; flex-wrap:wrap;">
-                    <div>Cup Seconds in spec: <strong>${cupIn} / ${total} (${((cupIn/total)*100).toFixed(1)}%)</strong></div>
-                    <div>Sensor Value in spec: <strong>${sensorIn} / ${total} (${((sensorIn/total)*100).toFixed(1)}%)</strong></div>
-                </div>
-            `;
-
-            renderTable();
-        }
-
-        function calculateR2(x, y) {
-            const n = x.length;
-            if (n < 2) return 0;
-            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-            for (let i = 0; i < n; i++) {
-                sumX += x[i]; sumY += y[i]; sumXY += x[i]*y[i]; sumX2 += x[i]*x[i];
-            }
-            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            let ssRes = 0, ssTot = 0;
-            const yMean = sumY / n;
-            for (let i = 0; i < n; i++) {
-                const pred = slope * x[i] + (sumY - slope * sumX) / n;
-                ssRes += Math.pow(y[i] - pred, 2);
-                ssTot += Math.pow(y[i] - yMean, 2);
-            }
-            return ssTot > 0 ? 1 - (ssRes / ssTot) : 0;
-        }
-
-        function standardDeviation(arr) {
-            if (arr.length < 2) return 0;
-            const mean = arr.reduce((a,b) => a + b, 0) / arr.length;
-            const variance = arr.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / arr.length;
-            return Math.sqrt(variance);
-        }
-
-        function runStrongestCorrelation() {
-            if (currentData.length === 0) return;
-
-            const diffs = currentData.map(d => d.difference);
-            const meanDiff = diffs.reduce((a,b) => a + b, 0) / diffs.length;
-            const stdDiff = standardDeviation(diffs);
-
-            const kValues = [0.5, 1.0, 1.5, 2.0];
-            let html = '<table style="width:100%;"><thead><tr><th>k</th><th>R²</th><th>Points Kept</th><th>% of Current</th></tr></thead><tbody>';
-
-            kValues.forEach(k => {
-                const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
-                const r2 = calculateR2(filtered.map(d => d.manualSec), filtered.map(d => d.sensorVal));
-                const pct = ((filtered.length / currentData.length) * 100).toFixed(1);
-                html += `<tr><td>${k}</td><td><strong>${r2.toFixed(3)}</strong></td><td>${filtered.length}</td><td>${pct}%</td></tr>`;
-            });
-            html += '</tbody></table>';
-            document.getElementById('strongestResults').innerHTML = html;
-        }
-
-        function renderTable() {
-            const thead = document.querySelector('#resultTable thead');
-            const tbody = document.querySelector('#resultTable tbody');
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
-
-            const headerRow = document.createElement('tr');
-            ['Date/Time', 'Cup Seconds', 'Sensor Value', 'Calculated cSt', 'Ratio (cSt/Sensor)', 'Difference'].forEach(text => {
-                const th = document.createElement('th');
-                th.textContent = text;
-                headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-
-            currentData.forEach(row => {
-                const ratio = row.sensorVal !== 0 ? (row.calcCst / row.sensorVal).toFixed(3) : '—';
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${row.dateTime}</td>
-                    <td>${row.manualSec.toFixed(2)}</td>
-                    <td>${row.sensorVal.toFixed(1)}</td>
-                    <td>${row.calcCst.toFixed(1)}</td>
-                    <td>${ratio}</td>
-                    <td>${row.difference.toFixed(1)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function downloadCSV() {
-            if (!currentData.length) return;
-
-            let csv = 'DateTime,Cup_Seconds,Sensor_Value,Calculated_cSt,Ratio_cSt_per_Sensor,Difference\n';
-            currentData.forEach(r => {
-                const ratio = r.sensorVal !== 0 ? (r.calcCst / r.sensorVal).toFixed(4) : '';
-                csv += `${r.dateTime},${r.manualSec},${r.sensorVal},${r.calcCst.toFixed(2)},${ratio},${r.difference.toFixed(2)}\n`;
-            });
-
-            // Add STD filter metadata
-            if (currentData.length > 2) {
-                const diffs = currentData.map(d => d.difference);
-                const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-                const stdDiff = standardDeviation(diffs);
-                csv += '\n# STD Filter Results (k values)\n';
-                [0.5, 1.0, 1.5, 2.0].forEach(k => {
-                    const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
-                    const r2 = calculateR2(filtered.map(d => d.manualSec), filtered.map(d => d.sensorVal));
-                    csv += `# k=${k}, R2=${r2.toFixed(4)}, Points=${filtered.length}\n`;
-                });
-            }
-
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'viscosity_cleaned_data.csv';
-            a.click();
-        }
-
-        // ==================== ADVANCED WEEKLY ANALYSIS ====================
-        document.getElementById('advancedFileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
-                complete: function(results) {
-                    advancedData = results.data
-                        .filter(row => row.Cup_Seconds && row.Sensor_Value)
-                        .map(row => ({
-                            dateTime: row.DateTime || row.dateTime,
-                            manualSec: parseFloat(row.Cup_Seconds),
-                            sensorVal: parseFloat(row.Sensor_Value),
-                            calcCst: parseFloat(row.Calculated_cSt),
-                            difference: parseFloat(row.Difference)
-                        }))
-                        .filter(d => !isNaN(d.manualSec) && !isNaN(d.sensorVal));
-
-                    if (advancedData.length === 0) {
-                        alert("No valid data found in the CSV.");
-                        return;
-                    }
-
-                    processWeeklyData();
-                    document.getElementById('advancedResults').style.display = 'block';
-                }
+                sel.add(opt);
             });
         });
+        
+        if (headers.length >= 3) {
+            document.getElementById('dateCol').value = 0;
+            document.getElementById('manualCol').value = 1;
+            document.getElementById('sensorCol').value = 2;
+        }
+    }
 
-        function processWeeklyData() {
-            // Group by week
-            const weeks = {};
-            
-            advancedData.forEach(d => {
-                const date = new Date(d.dateTime);
-                if (isNaN(date)) return;
-                
-                // Get week start (Monday)
-                const day = date.getDay();
-                const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-                const weekStart = new Date(date.setDate(diff));
-                const weekKey = weekStart.toISOString().split('T')[0];
-                
-                if (!weeks[weekKey]) {
-                    weeks[weekKey] = [];
-                }
-                weeks[weekKey].push(d);
-            });
+    function calculateCSt(seconds, cupType) {
+        if (!seconds || isNaN(seconds)) return null;
+        switch(cupType) {
+            case "EZ-Zahn4": return 13.26 * seconds - (673 / seconds);
+            case "EZ-Zahn5": return 23.56 * seconds - (744 / seconds);
+            case "ISO6": return 6.9 * seconds - (570 / seconds);
+            case "ISO8": return 21.78 * seconds - (306 / seconds);
+            case "ISO6_MINI": return 13.8 * seconds - (285 / seconds);
+            case "ISO8_MINI": return 43.56 * seconds - (153 / seconds);
+            default: return null;
+        }
+    }
 
-            weeklyData = Object.keys(weeks).sort().map(weekKey => {
-                const points = weeks[weekKey];
-                const sensorVals = points.map(p => p.sensorVal);
-                const diffs = points.map(p => Math.abs(p.difference));
-                
-                const x = points.map(p => p.manualSec);
-                const y = points.map(p => p.sensorVal);
-                const r2 = calculateR2(x, y);
-                
-                const meanSensor = sensorVals.reduce((a,b)=>a+b,0) / sensorVals.length;
-                const stdSensor = standardDeviation(sensorVals);
-                const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-                
-                // Classification logic
-                let status = 'Normal';
-                let statusClass = 'status-normal';
-                
-                if (stdSensor > 45 || meanDiff > 25) {
-                    status = 'Warning';
-                    statusClass = 'status-warning';
-                }
-                if (r2 < 0.15 || stdSensor > 80 || meanDiff > 40) {
-                    status = 'Not Normal';
-                    statusClass = 'status-bad';
-                }
-                
-                return {
-                    week: weekKey,
-                    points: points.length,
-                    meanSensor: meanSensor,
-                    stdSensor: stdSensor,
-                    meanDiff: meanDiff,
-                    r2: r2,
-                    status: status,
-                    statusClass: statusClass,
-                    data: points
-                };
-            });
+    function processData() {
+        const dateIdx = parseInt(document.getElementById('dateCol').value);
+        const manualIdx = parseInt(document.getElementById('manualCol').value);
+        const sensorIdx = parseInt(document.getElementById('sensorCol').value);
+        const cupType = document.getElementById('cupType').value;
 
-            renderWeeklyTable();
-            renderIssueCards();
-            showAdvancedView('scatter');
+        if (!cupType) {
+            alert("Please select a Cup Type.");
+            return;
         }
 
-        function renderWeeklyTable() {
-            const tbody = document.querySelector('#weeklyTable tbody');
-            tbody.innerHTML = '';
+        cleanedData = [];
+        let rawCup = 0, rawSensor = 0;
 
-            weeklyData.forEach(week => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${week.week}</strong></td>
-                    <td>${week.points}</td>
-                    <td>${week.meanSensor.toFixed(1)}</td>
-                    <td>${week.stdSensor.toFixed(1)}</td>
-                    <td>${week.meanDiff.toFixed(1)}</td>
-                    <td>${week.r2.toFixed(3)}</td>
-                    <td><span class="${week.statusClass}">${week.status}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
+        originalRows.forEach(row => {
+            if (!isNaN(parseFloat(row[manualIdx]))) rawCup++;
+            if (!isNaN(parseFloat(row[sensorIdx]))) rawSensor++;
+        });
 
-        function renderIssueCards() {
-            const container = document.getElementById('issueCards');
-            container.innerHTML = '';
+        for (let i = 0; i < originalRows.length; i++) {
+            const row = originalRows[i];
+            const dateTime = row[dateIdx];
+            const manualSec = parseFloat(row[manualIdx]);
+            let sensorVal = parseFloat(row[sensorIdx]);
 
-            const issues = [
-                { id: 'spike', title: 'Extreme Spikes', desc: 'Weeks with sensor values > 250 cP', color: '#ef4444' },
-                { id: 'variability', title: 'High Variability', desc: 'Weeks with Std Dev > 45', color: '#f97316' },
-                { id: 'lowR2', title: 'Low Correlation', desc: 'Weeks with R² < 0.25', color: '#a855f7' }
-            ];
+            if (isNaN(manualSec)) continue;
 
-            issues.forEach(issue => {
-                const div = document.createElement('div');
-                div.className = 'issue-card';
-                div.innerHTML = `
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:10px; height:10px; border-radius:50%; background:${issue.color};"></div>
-                        <strong>${issue.title}</strong>
-                    </div>
-                    <div style="margin-top:8px; font-size:0.9rem; color:#aaa;">${issue.desc}</div>
-                `;
-                div.onclick = () => filterByIssue(issue.id, div);
-                container.appendChild(div);
-            });
-        }
-
-        function filterByIssue(issueType, element) {
-            // Toggle active state
-            document.querySelectorAll('.issue-card').forEach(el => el.classList.remove('active'));
-            element.classList.add('active');
-
-            let filtered = advancedData;
-
-            if (issueType === 'spike') {
-                filtered = advancedData.filter(d => d.sensorVal > 250);
-            } else if (issueType === 'variability') {
-                // Find weeks with high std
-                const highVarWeeks = weeklyData.filter(w => w.stdSensor > 45).map(w => w.week);
-                filtered = advancedData.filter(d => {
-                    const date = new Date(d.dateTime);
-                    const weekKey = getWeekKey(date);
-                    return highVarWeeks.includes(weekKey);
-                });
-            } else if (issueType === 'lowR2') {
-                const lowR2Weeks = weeklyData.filter(w => w.r2 < 0.25).map(w => w.week);
-                filtered = advancedData.filter(d => {
-                    const date = new Date(d.dateTime);
-                    const weekKey = getWeekKey(date);
-                    return lowR2Weeks.includes(weekKey);
-                });
+            if (isNaN(sensorVal)) {
+                let prev = null, next = null;
+                for (let j = i-1; j >= 0; j--) {
+                    const v = parseFloat(originalRows[j][sensorIdx]);
+                    if (!isNaN(v)) { prev = v; break; }
+                }
+                for (let j = i+1; j < originalRows.length; j++) {
+                    const v = parseFloat(originalRows[j][sensorIdx]);
+                    if (!isNaN(v)) { next = v; break; }
+                }
+                if (prev !== null && next !== null) sensorVal = (prev + next) / 2;
+                else if (prev !== null) sensorVal = prev;
+                else if (next !== null) sensorVal = next;
+                else continue;
             }
 
-            // Re-render scatter with filtered data
-            renderAdvancedScatter(filtered);
+            if (sensorVal < 0) continue;
+
+            const calcCst = calculateCSt(manualSec, cupType);
+            if (calcCst === null) continue;
+
+            cleanedData.push({
+                dateTime: dateTime,
+                manualSec: manualSec,
+                sensorVal: sensorVal,
+                calcCst: calcCst,
+                difference: calcCst - sensorVal
+            });
         }
 
-        function getWeekKey(date) {
-            const day = date.getDay();
-            const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-            const weekStart = new Date(date.setDate(diff));
-            return weekStart.toISOString().split('T')[0];
+        if (cleanedData.length === 0) {
+            alert("No valid paired data found after processing.");
+            return;
         }
 
-        function showAdvancedView(view) {
-            document.getElementById('advancedScatterView').style.display = view === 'scatter' ? 'block' : 'none';
-            document.getElementById('advancedTimelineView').style.display = view === 'timeline' ? 'block' : 'none';
+        currentData = [...cleanedData];
 
-            if (view === 'scatter') {
-                renderAdvancedScatter(advancedData);
-            } else {
-                renderAdvancedTimeline();
+        // Show sections
+        document.getElementById('baselineSection').style.display = 'block';
+        document.getElementById('limitsSection').style.display = 'block';
+        document.getElementById('strongestSection').style.display = 'block';
+        document.getElementById('resultsSection').style.display = 'block';
+
+        renderBaseline();
+        renderAll();
+    }
+
+    function renderBaseline() {
+        const container = document.getElementById('baselineMetrics');
+        container.innerHTML = '';
+
+        const cupVals = cleanedData.map(d => d.manualSec);
+        const sensorVals = cleanedData.map(d => d.sensorVal);
+
+        const stats = (arr) => {
+            const min = Math.min(...arr);
+            const max = Math.max(...arr);
+            const avg = arr.reduce((a,b)=>a+b,0) / arr.length;
+            const std = standardDeviation(arr);
+            return { min, max, avg, std };
+        };
+
+        const cupStats = stats(cupVals);
+        const sensorStats = stats(sensorVals);
+        const r2 = calculateR2(cupVals, sensorVals);
+
+        const createMetric = (label, value, unit = '') => {
+            const div = document.createElement('div');
+            div.className = 'metric';
+            div.innerHTML = `
+                <div class="metric-value">${value}</div>
+                <div style="font-size:12px; color:#64748b;">${label}</div>
+            `;
+            return div;
+        };
+
+        container.appendChild(createMetric('Cup Seconds - Min', cupStats.min.toFixed(2)));
+        container.appendChild(createMetric('Cup Seconds - Max', cupStats.max.toFixed(2)));
+        container.appendChild(createMetric('Cup Seconds - Avg', cupStats.avg.toFixed(2)));
+        container.appendChild(createMetric('Cup Seconds - Std Dev', cupStats.std.toFixed(2)));
+
+        container.appendChild(createMetric('Sensor - Min', sensorStats.min.toFixed(1)));
+        container.appendChild(createMetric('Sensor - Max', sensorStats.max.toFixed(1)));
+        container.appendChild(createMetric('Sensor - Avg', sensorStats.avg.toFixed(1)));
+        container.appendChild(createMetric('Sensor - Std Dev', sensorStats.std.toFixed(2)));
+
+        const r2Div = document.createElement('div');
+        r2Div.className = 'metric';
+        r2Div.innerHTML = `
+            <div class="metric-value" style="color:#22c55e;">${r2.toFixed(3)}</div>
+            <div style="font-size:12px; color:#64748b;">Overall R²</div>
+        `;
+        container.appendChild(r2Div);
+    }
+
+    function applyLimits() {
+        const mLSL = parseFloat(document.getElementById('manualLSL').value);
+        const mUSL = parseFloat(document.getElementById('manualUSL').value);
+        const sLSL = parseFloat(document.getElementById('sensorLSL').value);
+        const sUSL = parseFloat(document.getElementById('sensorUSL').value);
+
+        currentData = cleanedData.filter(d => {
+            let pass = true;
+            if (!isNaN(mLSL) && d.manualSec < mLSL) pass = false;
+            if (!isNaN(mUSL) && d.manualSec > mUSL) pass = false;
+            if (!isNaN(sLSL) && d.sensorVal < sLSL) pass = false;
+            if (!isNaN(sUSL) && d.sensorVal > sUSL) pass = false;
+            return pass;
+        });
+
+        renderAll();
+    }
+
+    function resetLimits() {
+        document.getElementById('manualLSL').value = '';
+        document.getElementById('manualUSL').value = '';
+        document.getElementById('sensorLSL').value = '';
+        document.getElementById('sensorUSL').value = '';
+        currentData = [...cleanedData];
+        renderAll();
+    }
+
+    function renderAll() {
+        renderTable();
+        renderScatterPlot();
+        updateSpecResults();
+    }
+
+    function updateSpecResults() {
+        const total = cleanedData.length;
+        const mLSL = parseFloat(document.getElementById('manualLSL').value);
+        const mUSL = parseFloat(document.getElementById('manualUSL').value);
+        const sLSL = parseFloat(document.getElementById('sensorLSL').value);
+        const sUSL = parseFloat(document.getElementById('sensorUSL').value);
+
+        const cupIn = cleanedData.filter(d => 
+            (!isNaN(mLSL) && !isNaN(mUSL)) ? (d.manualSec >= mLSL && d.manualSec <= mUSL) : true
+        ).length;
+
+        const sensorIn = cleanedData.filter(d => 
+            (!isNaN(sLSL) && !isNaN(sUSL)) ? (d.sensorVal >= sLSL && d.sensorVal <= sUSL) : true
+        ).length;
+
+        const r2 = calculateR2(currentData.map(d => d.manualSec), currentData.map(d => d.sensorVal));
+
+        document.getElementById('specResults').innerHTML = `
+            <div style="display:flex; gap:20px; flex-wrap:wrap;">
+                <div><strong>Cup Seconds in spec:</strong> ${cupIn} / ${total} (${((cupIn/total)*100).toFixed(1)}%)</div>
+                <div><strong>Sensor Value in spec:</strong> ${sensorIn} / ${total} (${((sensorIn/total)*100).toFixed(1)}%)</div>
+                <div><strong>Current R² (after limits):</strong> <span style="color:#22c55e; font-weight:700;">${r2.toFixed(3)}</span></div>
+            </div>
+        `;
+    }
+
+    function calculateR2(x, y) {
+        const n = x.length;
+        if (n < 2) return 0;
+        let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
+        for (let i = 0; i < n; i++) {
+            sumX += x[i]; sumY += y[i]; sumXY += x[i]*y[i]; sumX2 += x[i]*x[i];
+        }
+        const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
+        let ssRes = 0, ssTot = 0;
+        const yMean = sumY / n;
+        for (let i = 0; i < n; i++) {
+            const pred = slope * x[i] + (sumY - slope * sumX) / n;
+            ssRes += Math.pow(y[i] - pred, 2);
+            ssTot += Math.pow(y[i] - yMean, 2);
+        }
+        return ssTot > 0 ? 1 - (ssRes / ssTot) : 0;
+    }
+
+    function standardDeviation(arr) {
+        if (arr.length < 2) return 0;
+        const mean = arr.reduce((a,b) => a + b, 0) / arr.length;
+        const variance = arr.reduce((a,b) => a + Math.pow(b - mean, 2), 0) / arr.length;
+        return Math.sqrt(variance);
+    }
+
+    function renderTable() {
+        const thead = document.querySelector('#resultTable thead');
+        const tbody = document.querySelector('#resultTable tbody');
+        thead.innerHTML = '';
+        tbody.innerHTML = '';
+
+        const headerRow = document.createElement('tr');
+        ['Date/Time', 'Cup Seconds', 'Calculated cSt', 'Sensor Value', 'Ratio (cSt/Sensor)', 'Difference'].forEach(text => {
+            const th = document.createElement('th');
+            th.textContent = text;
+            headerRow.appendChild(th);
+        });
+        thead.appendChild(headerRow);
+
+        currentData.forEach(row => {
+            const ratio = row.sensorVal !== 0 ? (row.calcCst / row.sensorVal) : 0;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${row.dateTime}</td>
+                <td>${row.manualSec.toFixed(2)}</td>
+                <td>${row.calcCst.toFixed(1)}</td>
+                <td>${row.sensorVal.toFixed(1)}</td>
+                <td>${ratio.toFixed(3)}</td>
+                <td>${row.difference.toFixed(1)}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderScatterPlot() {
+        const ctx = document.getElementById('scatterChart');
+        if (!ctx) return;
+        if (chartInstance) chartInstance.destroy();
+
+        const dataPoints = currentData.map(d => ({ x: d.manualSec, y: d.sensorVal }));
+
+        chartInstance = new Chart(ctx, {
+            type: 'scatter',
+            data: {
+                datasets: [{
+                    label: 'Data Points',
+                    data: dataPoints,
+                    backgroundColor: '#3b82f6'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Cup Seconds' } },
+                    y: { title: { display: true, text: 'Sensor Value' } }
+                }
             }
-        }
+        });
+    }
 
-        function renderAdvancedScatter(dataToShow) {
-            const ctx = document.getElementById('advancedScatterChart');
-            if (advancedChartInstance) advancedChartInstance.destroy();
+    function runStrongestCorrelation() {
+        if (currentData.length === 0) return;
 
-            const points = dataToShow.map(d => ({
-                x: d.manualSec,
-                y: d.sensorVal
-            }));
+        const diffs = currentData.map(d => d.difference);
+        const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
+        const stdDiff = standardDeviation(diffs);
 
-            advancedChartInstance = new Chart(ctx, {
+        const kValues = [0.5, 1.0, 1.5, 2.0];
+        let html = '<table style="width:100%;"><thead><tr><th>k</th><th>R²</th><th>Points Kept</th><th>% of Data</th></tr></thead><tbody>';
+
+        kValues.forEach(k => {
+            const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
+            const r2 = calculateR2(filtered.map(d => d.manualSec), filtered.map(d => d.sensorVal));
+            const pct = ((filtered.length / currentData.length) * 100).toFixed(1);
+            html += `<tr><td>${k}</td><td><strong>${r2.toFixed(3)}</strong></td><td>${filtered.length}</td><td>${pct}%</td></tr>`;
+        });
+        html += '</tbody></table>';
+        document.getElementById('strongestResults').innerHTML = html;
+
+        // Render small scatter plots for each k
+        renderStdScatterPlots(kValues, meanDiff, stdDiff);
+    }
+
+    function renderStdScatterPlots(kValues, meanDiff, stdDiff) {
+        const container = document.getElementById('stdCharts');
+        container.innerHTML = '';
+        stdChartInstances.forEach(c => c.destroy());
+        stdChartInstances = [];
+
+        kValues.forEach(k => {
+            const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
+            if (filtered.length < 3) return;
+
+            const div = document.createElement('div');
+            div.innerHTML = `
+                <div style="font-size:13px; margin-bottom:6px; font-weight:600;">k = ${k} &nbsp;&nbsp; R² = <span style="color:#22c55e;">${calculateR2(filtered.map(d=>d.manualSec), filtered.map(d=>d.sensorVal)).toFixed(3)}</span></div>
+                <div class="chart-container small-chart"><canvas id="stdChart_${k}"></canvas></div>
+            `;
+            container.appendChild(div);
+
+            const ctx = div.querySelector('canvas');
+            const chart = new Chart(ctx, {
                 type: 'scatter',
                 data: {
                     datasets: [{
-                        label: 'Data Points',
-                        data: points,
-                        backgroundColor: '#00d4ff',
-                        pointRadius: 4
+                        label: `k=${k}`,
+                        data: filtered.map(d => ({x: d.manualSec, y: d.sensorVal})),
+                        backgroundColor: '#3b82f6'
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
                     scales: {
-                        x: { title: { display: true, text: 'Cup Seconds' } },
-                        y: { title: { display: true, text: 'Sensor Value' } }
+                        x: { title: { display: true, text: 'Cup Seconds', font: {size:10} } },
+                        y: { title: { display: true, text: 'Sensor', font: {size:10} } }
                     }
                 }
             });
+            stdChartInstances.push(chart);
+        });
+    }
+
+    function downloadCSV() {
+        if (!currentData.length) return;
+
+        let csv = 'DateTime,Cup_Seconds,Calculated_cSt,Sensor_Value,Ratio_cSt_per_Sensor,Difference\n';
+        currentData.forEach(r => {
+            const ratio = r.sensorVal !== 0 ? (r.calcCst / r.sensorVal) : 0;
+            csv += `${r.dateTime},${r.manualSec},${r.calcCst.toFixed(2)},${r.sensorVal},${ratio.toFixed(4)},${r.difference.toFixed(2)}\n`;
+        });
+
+        // Add STD filter metadata at bottom
+        if (currentData.length > 2) {
+            const diffs = currentData.map(d => d.difference);
+            const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
+            const stdDiff = standardDeviation(diffs);
+
+            csv += '\n# Difference STD Filter Results (k values)\n';
+            const kValues = [0.5, 1.0, 1.5, 2.0];
+            kValues.forEach(k => {
+                const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
+                const r2 = calculateR2(filtered.map(d => d.manualSec), filtered.map(d => d.sensorVal));
+                csv += `# k=${k}, R2=${r2.toFixed(4)}, Points=${filtered.length}\n`;
+            });
         }
 
-        function renderAdvancedTimeline() {
-            const ctx = document.getElementById('advancedTimelineChart');
-            if (advancedChartInstance) advancedChartInstance.destroy();
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'viscosity_cleaned_data.csv';
+        a.click();
+    }
 
-            const labels = weeklyData.map(w => w.week);
-            const means = weeklyData.map(w => w.meanSensor);
+    // ==================== TAB 2: ADVANCED WEEKLY ANALYSIS ====================
+    let advData = [];
+    let weeklyStats = [];
+    let advScatterChart = null;
+    let advTimelineChart = null;
 
-            advancedChartInstance = new Chart(ctx, {
-                type: 'bar',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Weekly Mean Sensor (cP)',
-                        data: means,
-                        backgroundColor: weeklyData.map(w => 
-                            w.status === 'Normal' ? '#4ade80' : 
-                            w.status === 'Warning' ? '#fb923c' : '#f87171'
-                        )
-                    }]
+    document.getElementById('advFileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            complete: function(results) {
+                const rows = results.data;
+                
+                // Smart column detection
+                const headerKeys = Object.keys(rows[0] || {});
+                
+                let dateKey = headerKeys.find(k => /date|time/i.test(k)) || headerKeys[0];
+                let cupKey = headerKeys.find(k => /cup|zahn|second/i.test(k)) || headerKeys[1];
+                let sensorKey = headerKeys.find(k => /sensor|viscosity|value/i.test(k)) || headerKeys[2];
+                let diffKey = headerKeys.find(k => /diff/i.test(k)) || headerKeys[3];
+
+                advData = rows.map(row => ({
+                    date: new Date(row[dateKey]),
+                    cup: parseFloat(row[cupKey]),
+                    sensor: parseFloat(row[sensorKey]),
+                    diff: parseFloat(row[diffKey])
+                })).filter(d => d.date instanceof Date && !isNaN(d.date) && !isNaN(d.cup) && !isNaN(d.sensor));
+
+                if (advData.length === 0) {
+                    alert("Could not parse data. Please make sure the CSV has DateTime, Cup_Seconds, Sensor_Value columns.");
+                    return;
+                }
+
+                processAdvancedAnalysis();
+                document.getElementById('advResults').style.display = 'block';
+            }
+        });
+    });
+
+    function processAdvancedAnalysis() {
+        // Calculate overall stats
+        const cupVals = advData.map(d => d.cup);
+        const sensorVals = advData.map(d => d.sensor);
+        const diffVals = advData.map(d => Math.abs(d.diff));
+
+        const overallR2 = calculateR2(cupVals, sensorVals);
+        const meanDiff = diffVals.reduce((a,b)=>a+b,0) / diffVals.length;
+        const stdDiff = standardDeviation(diffVals);
+
+        document.getElementById('advTotalPoints').textContent = advData.length;
+        document.getElementById('advOverallR2').textContent = overallR2.toFixed(3);
+        document.getElementById('advMeanDiff').textContent = meanDiff.toFixed(1);
+        document.getElementById('advStdDiff').textContent = stdDiff.toFixed(2);
+
+        // Group by week
+        const weekMap = new Map();
+        
+        advData.forEach(d => {
+            const weekStart = getWeekStart(d.date);
+            const key = weekStart.toISOString().split('T')[0];
+            
+            if (!weekMap.has(key)) {
+                weekMap.set(key, []);
+            }
+            weekMap.get(key).push(d);
+        });
+
+        weeklyStats = [];
+        weekMap.forEach((points, weekKey) => {
+            const weekDate = new Date(weekKey);
+            const cupVals = points.map(p => p.cup);
+            const sensorVals = points.map(p => p.sensor);
+            const diffAbs = points.map(p => Math.abs(p.diff));
+
+            const weekR2 = calculateR2(cupVals, sensorVals);
+            const meanSensor = sensorVals.reduce((a,b)=>a+b,0) / sensorVals.length;
+            const stdSensor = standardDeviation(sensorVals);
+            const meanAbsDiff = diffAbs.reduce((a,b)=>a+b,0) / diffAbs.length;
+
+            // Classification logic (tunable)
+            let status = 'Normal';
+            let statusClass = 'status-normal';
+            
+            if (stdSensor > 45 || meanAbsDiff > 35 || weekR2 < 0.15) {
+                status = 'Not Normal';
+                statusClass = 'status-bad';
+            } else if (stdSensor > 25 || meanAbsDiff > 20 || weekR2 < 0.30) {
+                status = 'Warning';
+                statusClass = 'status-warning';
+            }
+
+            weeklyStats.push({
+                week: weekKey,
+                weekDate: weekDate,
+                count: points.length,
+                meanSensor: meanSensor,
+                stdSensor: stdSensor,
+                meanAbsDiff: meanAbsDiff,
+                r2: weekR2,
+                status: status,
+                statusClass: statusClass,
+                points: points
+            });
+        });
+
+        // Sort by date
+        weeklyStats.sort((a, b) => a.weekDate - b.weekDate);
+
+        renderWeeklyTable();
+        renderIssueCards();
+        showAdvView('scatter');
+    }
+
+    function getWeekStart(date) {
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+        return new Date(d.setDate(diff));
+    }
+
+    function renderWeeklyTable() {
+        const container = document.getElementById('weeklyTable');
+        container.innerHTML = '';
+
+        let html = `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Week Starting</th>
+                        <th>Points</th>
+                        <th>Mean Sensor</th>
+                        <th>Std Dev</th>
+                        <th>Mean |Diff|</th>
+                        <th>R²</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+        weeklyStats.forEach(week => {
+            html += `
+                <tr>
+                    <td><strong>${week.week}</strong></td>
+                    <td>${week.count}</td>
+                    <td>${week.meanSensor.toFixed(1)}</td>
+                    <td>${week.stdSensor.toFixed(1)}</td>
+                    <td>${week.meanAbsDiff.toFixed(1)}</td>
+                    <td>${week.r2.toFixed(3)}</td>
+                    <td class="${week.statusClass}">${week.status}</td>
+                </tr>
+            `;
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
+    }
+
+    function renderIssueCards() {
+        const container = document.getElementById('issueCards');
+        container.innerHTML = '';
+
+        const issues = [
+            {
+                id: 'spikes',
+                title: 'Extreme Spikes',
+                desc: 'Weeks with sensor values > 250',
+                filter: () => weeklyStats.filter(w => w.meanSensor > 250)
+            },
+            {
+                id: 'variability',
+                title: 'High Variability',
+                desc: 'Weeks with Std Dev > 45',
+                filter: () => weeklyStats.filter(w => w.stdSensor > 45)
+            },
+            {
+                id: 'lowcorr',
+                title: 'Low Correlation',
+                desc: 'Weeks with R² < 0.25',
+                filter: () => weeklyStats.filter(w => w.r2 < 0.25)
+            }
+        ];
+
+        issues.forEach(issue => {
+            const div = document.createElement('div');
+            div.className = 'issue-card';
+            div.innerHTML = `
+                <div style="font-weight:600; margin-bottom:4px;">${issue.title}</div>
+                <div style="font-size:13px; color:#94a3b8;">${issue.desc}</div>
+            `;
+            div.onclick = () => {
+                // Highlight affected weeks in table (simple version)
+                alert(`${issue.title}: ${issue.filter().length} week(s) affected`);
+            };
+            container.appendChild(div);
+        });
+    }
+
+    function showAdvView(view) {
+        document.getElementById('advScatterView').style.display = view === 'scatter' ? 'block' : 'none';
+        document.getElementById('advTimelineView').style.display = view === 'timeline' ? 'block' : 'none';
+
+        if (view === 'scatter') {
+            renderAdvScatter();
+        } else {
+            renderAdvTimeline();
+        }
+    }
+
+    function renderAdvScatter() {
+        const ctx = document.getElementById('advScatterChart');
+        if (advScatterChart) advScatterChart.destroy();
+
+        const datasets = weeklyStats.map((week, idx) => ({
+            label: week.week,
+            data: week.points.map(p => ({ x: p.cup, y: p.sensor })),
+            backgroundColor: week.status === 'Normal' ? '#22c55e' : 
+                           week.status === 'Warning' ? '#f59e0b' : '#ef4444'
+        }));
+
+        advScatterChart = new Chart(ctx, {
+            type: 'scatter',
+            data: { datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: { beginAtZero: true, title: { display: true, text: 'Mean Sensor Value' } }
-                    }
+                scales: {
+                    x: { title: { display: true, text: 'Cup Seconds' } },
+                    y: { title: { display: true, text: 'Sensor Value' } }
                 }
-            });
-        }
+            }
+        });
+    }
 
-        // Initial setup
-        console.log('%c[BETA Tool] Combined Correlation + Advanced Weekly Analysis ready.', 'color:#00d4ff');
-    </script>
+    function renderAdvTimeline() {
+        const ctx = document.getElementById('advTimelineChart');
+        if (advTimelineChart) advTimelineChart.destroy();
+
+        const labels = weeklyStats.map(w => w.week);
+        const values = weeklyStats.map(w => w.meanSensor);
+        const colors = weeklyStats.map(w => 
+            w.status === 'Normal' ? '#22c55e' : 
+            w.status === 'Warning' ? '#f59e0b' : '#ef4444'
+        );
+
+        advTimelineChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Mean Sensor Value',
+                    data: values,
+                    backgroundColor: colors
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { title: { display: true, text: 'Mean Sensor Value' } }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+</script>
+
 </body>
 </html>
