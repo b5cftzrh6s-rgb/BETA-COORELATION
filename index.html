@@ -3,158 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BETA-COORELATION | Viscosity Tool</title>
+    <title>BETA-COORELATION • Investment Casting Slurry Tool</title>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        body { font-family: system-ui, sans-serif; background: #0a0a0a; color: #fff; padding: 20px; margin: 0; }
-        .tab-container { max-width: 1400px; margin: auto; }
-        .tabs { display: flex; border-bottom: 2px solid #333; margin-bottom: 20px; }
-        .tab { padding: 12px 24px; cursor: pointer; font-weight: 600; border: none; background: #111; color: #aaa; }
-        .tab.active { background: #00d4ff; color: #000; border-radius: 8px 8px 0 0; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
+        body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #fff; margin: 0; padding: 20px; }
+        .container { max-width: 1400px; margin: 0 auto; }
+        .nav { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #222; padding-bottom: 12px; }
+        .nav button { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .nav button.active { background: #00d4ff; color: #000; border-color: #00d4ff; }
         .card { background: #111; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #222; }
-        .section-title { color: #00d4ff; font-weight: 600; margin: 0 0 12px; font-size: 1.1rem; }
-        button { background: #00d4ff; color: #000; border: none; padding: 12px 24px; border-radius: 9999px; font-weight: 600; cursor: pointer; }
+        .section-title { color: #00d4ff; font-weight: 700; margin-bottom: 12px; font-size: 1.1rem; }
+        button { background: #00d4ff; color: #000; border: none; padding: 12px 24px; border-radius: 9999px; font-weight: 700; cursor: pointer; }
         button.secondary { background: #333; color: #fff; }
         select, input { width: 100%; padding: 10px; background: #1a1a1a; color: #fff; border: 1px solid #333; border-radius: 8px; }
         table { width: 100%; border-collapse: collapse; background: #1a1a1a; font-size: 0.9rem; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid #333; }
-        th { background: #222; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #333; }
+        th { background: #222; font-weight: 600; }
         .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-        .metric { background: #1a1a1a; padding: 14px; border-radius: 12px; text-align: center; }
+        .metric { background: #1a1a1a; padding: 16px; border-radius: 12px; text-align: center; }
         .metric-value { font-size: 22px; font-weight: 700; color: #00d4ff; }
-        .chart-container { position: relative; height: 380px; margin: 16px 0; }
-        .small-chart { height: 220px; }
-        .spec-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #333; }
-        .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-        .regime-normal { color: #22c55e; }
-        .regime-warning { color: #f59e0b; }
-        .regime-bad { color: #ef4444; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .good { color: #22c55e; font-weight: 700; }
+        .warning { color: #f59e0b; font-weight: 700; }
+        .bad { color: #ef4444; font-weight: 700; }
+        details { background: #1a1a1a; border-radius: 8px; padding: 12px; margin-bottom: 16px; }
+        summary { cursor: pointer; font-weight: 600; color: #00d4ff; }
     </style>
 </head>
 <body>
-    <div class="tab-container">
-        <h1 style="margin-bottom: 8px;">BETA-COORELATION Tool</h1>
-        <p style="color:#888; margin-bottom:20px;">Investment Casting Slurry Viscosity Correlation + Weekly Regime Analysis</p>
+    <div class="container">
+        <h1 style="margin-bottom: 8px;">Investment Casting Slurry Tool</h1>
+        <p style="color: #888; margin-bottom: 20px;">BETA-COORELATION • Correlation + Advanced Weekly Regime Analysis</p>
 
-        <!-- Tabs -->
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab(0)">Correlation Tool</button>
-            <button class="tab" onclick="switchTab(1)">Advanced Weekly Analysis</button>
+        <!-- Navigation -->
+        <div class="nav">
+            <button onclick="switchTab(1)" id="tab1-btn" class="active">1. Correlation Tool</button>
+            <button onclick="switchTab(2)" id="tab2-btn">2. Advanced Weekly Analysis</button>
         </div>
 
-        <!-- TAB 1: Correlation Tool -->
-        <div id="tab0" class="tab-content active">
-            <!-- Upload -->
+        <!-- ==================== TAB 1: CORRELATION TOOL ==================== -->
+        <div id="tab1" class="tab-content active">
             <div class="card">
                 <div class="section-title">1. Upload Raw Data (Headers in Row 15)</div>
-                <input type="file" id="fileInput" accept=".csv">
-                <div id="selectors" style="display:none; margin-top:20px;">
-                    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
-                        <div><label>Date/Time Column</label><select id="dateCol"></select></div>
-                        <div><label>Cup Seconds Column</label><select id="manualCol"></select></div>
-                        <div><label>Sensor Value Column</label><select id="sensorCol"></select></div>
-                    </div>
-                    <div style="margin-top:16px;">
-                        <label>Cup Type <span style="color:red;">*</span></label>
-                        <select id="cupType">
-                            <option value="">-- Select Cup Type --</option>
-                            <option value="EZ-Zahn4">EZ-Zahn #4</option>
-                            <option value="EZ-Zahn5">EZ-Zahn #5</option>
-                            <option value="ISO6">ISO #6</option>
-                            <option value="ISO8">ISO #8</option>
-                            <option value="ISO6_MINI">ISO #6 Mini</option>
-                            <option value="ISO8_MINI">ISO #8 Mini</option>
-                        </select>
-                    </div>
-                    <button onclick="processData()" style="width:100%; margin-top:16px;">Process Data</button>
-                </div>
+                <input type="file" id="fileInput1" accept=".csv">
             </div>
 
-            <!-- Summary Bar -->
-            <div id="summaryBar" class="card" style="display:none; background:#1a1a1a;">
-                <div style="display:flex; gap:30px; flex-wrap:wrap; font-size:0.95rem;">
-                    <div><strong>Raw Rows:</strong> <span id="rawTotal">—</span></div>
-                    <div><strong>Cup Seconds found:</strong> <span id="rawCup">—</span></div>
-                    <div><strong>Sensor Values found:</strong> <span id="rawSensor">—</span></div>
-                    <div><strong>After Cleaning (paired):</strong> <span id="cleanedPoints">—</span></div>
-                    <div><strong>After Limits:</strong> <span id="filteredPoints">—</span></div>
+            <div id="selectors1" class="card" style="display:none;">
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                    <div><label>Date/Time Column</label><select id="dateCol"></select></div>
+                    <div><label>Cup Seconds Column</label><select id="manualCol"></select></div>
+                    <div><label>Sensor Value Column</label><select id="sensorCol"></select></div>
                 </div>
+                <div style="margin-top:16px;">
+                    <label>Cup Type <span style="color:red;">*</span></label>
+                    <select id="cupType1">
+                        <option value="">-- Select Cup Type --</option>
+                        <option value="EZ-Zahn4">EZ-Zahn #4</option>
+                        <option value="EZ-Zahn5">EZ-Zahn #5</option>
+                        <option value="ISO6">ISO #6</option>
+                        <option value="ISO8">ISO #8</option>
+                        <option value="ISO6_MINI">ISO #6 Mini</option>
+                        <option value="ISO8_MINI">ISO #8 Mini</option>
+                    </select>
+                </div>
+                <button onclick="processData1()" style="width:100%; margin-top:16px;">Process Data</button>
             </div>
 
-            <!-- Baseline -->
-            <div id="baselineSection" style="display:none;">
+            <!-- Shift Definitions -->
+            <details class="card" id="shiftSection" style="display:none;">
+                <summary>Define Shifts (Optional) — Click to expand</summary>
+                <div style="margin-top:12px;">
+                    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div><label>Shift 1 Name</label><input type="text" id="shift1Name" value="Day Shift"></div>
+                        <div><label>Start (HH:MM)</label><input type="time" id="shift1Start" value="06:00"></div>
+                        <div><label>End (HH:MM)</label><input type="time" id="shift1End" value="14:00"></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px; margin-bottom:12px;">
+                        <div><label>Shift 2 Name</label><input type="text" id="shift2Name" value="Afternoon Shift"></div>
+                        <div><label>Start (HH:MM)</label><input type="time" id="shift2Start" value="14:00"></div>
+                        <div><label>End (HH:MM)</label><input type="time" id="shift2End" value="22:00"></div>
+                    </div>
+                    <div style="display:grid; grid-template-columns: 2fr 1fr 1fr; gap:12px;">
+                        <div><label>Shift 3 Name (optional)</label><input type="text" id="shift3Name" value="Night Shift"></div>
+                        <div><label>Start (HH:MM)</label><input type="time" id="shift3Start" value="22:00"></div>
+                        <div><label>End (HH:MM)</label><input type="time" id="shift3End" value="06:00"></div>
+                    </div>
+                    <button onclick="applyShifts1()" style="margin-top:12px; width:100%;">Apply Shifts & Show Per-Shift Analysis</button>
+                </div>
+                <div id="shiftResults1" style="margin-top:16px;"></div>
+            </details>
+
+            <div id="results1" style="display:none;">
                 <div class="card">
-                    <div class="section-title">Baseline Results (Full Cleaned Data)</div>
-                    <div class="metrics" id="baselineMetrics"></div>
+                    <div class="section-title">Baseline Statistics (Min / Max / Avg / Std Dev)</div>
+                    <div class="metrics" id="baselineMetrics1"></div>
                 </div>
-            </div>
 
-            <!-- Limits -->
-            <div class="card" id="limitsSection" style="display:none;">
-                <div class="section-title">2. Manual Spec Limits</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                    <div>
-                        <label>Cup Seconds LSL</label><input type="number" id="manualLSL" placeholder="e.g. 27">
-                        <label style="margin-top:8px;">Cup Seconds USL</label><input type="number" id="manualUSL" placeholder="e.g. 32">
+                <div class="card">
+                    <div class="section-title">Manual Spec Limits</div>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
+                        <div>
+                            <label>Cup Seconds LSL</label><input type="number" id="manualLSL">
+                            <label style="margin-top:8px;">Cup Seconds USL</label><input type="number" id="manualUSL">
+                        </div>
+                        <div>
+                            <label>Sensor LSL</label><input type="number" id="sensorLSL">
+                            <label style="margin-top:8px;">Sensor USL</label><input type="number" id="sensorUSL">
+                        </div>
                     </div>
-                    <div>
-                        <label>Sensor Value LSL</label><input type="number" id="sensorLSL" placeholder="e.g. 80">
-                        <label style="margin-top:8px;">Sensor Value USL</label><input type="number" id="sensorUSL" placeholder="e.g. 300">
+                    <div style="margin-top:12px;">
+                        <button onclick="applyLimits1()">Apply Limits</button>
+                        <button onclick="resetLimits1()" class="secondary" style="margin-left:8px;">Reset</button>
                     </div>
+                    <div id="specResults1" style="margin-top:16px; font-size:0.95rem;"></div>
                 </div>
-                <div style="display:flex; gap:12px; margin-top:16px;">
-                    <button onclick="applyLimits()" style="flex:1;">Apply Limits</button>
-                    <button onclick="resetLimits()" class="secondary" style="flex:1;">Reset Limits</button>
+
+                <div class="card">
+                    <div class="section-title">STD Filter + Linear Regression Formulas (k values)</div>
+                    <button onclick="runStrongest1()" style="width:100%;">Calculate Best R² + Regression Formulas for k = 0.5 / 1.0 / 1.5 / 2.0</button>
+                    <div id="strongestResults1" style="margin-top:16px;"></div>
                 </div>
-                <div id="specResults" style="margin-top:16px; font-size:0.95rem;"></div>
-            </div>
 
-            <!-- STD Filter Section -->
-            <div class="card" id="strongestSection" style="display:none;">
-                <div class="section-title">3. STD Filter on Difference + Linear Regression</div>
-                <button onclick="runStrongestCorrelation()" style="width:100%;">Calculate Best R² + Regression Formulas for k = 0.5 / 1.0 / 1.5 / 2.0</button>
-                <div id="strongestResults" style="margin-top:16px;"></div>
-                <div id="stdCharts" class="grid-4" style="margin-top:20px;"></div>
-            </div>
-
-            <!-- Data Table -->
-            <div id="resultsSection" style="display:none;">
                 <div class="card">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <div class="section-title" style="margin:0;">Data Table (Filtered)</div>
-                        <button onclick="downloadCSV()" class="secondary">Download CSV (with Regression Formulas)</button>
+                        <div class="section-title" style="margin:0;">Data Table</div>
+                        <button onclick="downloadCSV1()" class="secondary">Download CSV</button>
                     </div>
                     <div style="overflow-x:auto; max-height:400px;">
-                        <table id="resultTable">
-                            <thead></thead>
-                            <tbody></tbody>
-                        </table>
+                        <table id="resultTable1"><thead></thead><tbody></tbody></table>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- TAB 2: Advanced Weekly Analysis -->
-        <div id="tab1" class="tab-content">
+        <!-- ==================== TAB 2: ADVANCED WEEKLY ANALYSIS (uses raw file) ==================== -->
+        <div id="tab2" class="tab-content">
             <div class="card">
-                <div class="section-title">Upload Cleaned CSV from Tab 1 (or any file with DateTime, Cup_Seconds, Sensor_Value, Difference)</div>
-                <input type="file" id="advFileInput" accept=".csv">
-                <div id="advResults" style="display:none; margin-top:20px;">
-                    <div class="metrics" id="advMetrics"></div>
-                    <div class="card" style="margin-top:20px;">
-                        <div class="section-title">Weekly Regime Classification</div>
-                        <div id="weeklyTable"></div>
-                    </div>
-                    <div class="card">
-                        <div class="section-title">Weekly Mean Difference Trend</div>
-                        <div class="chart-container"><canvas id="advLineChart"></canvas></div>
-                    </div>
-                    <div class="card">
-                        <div class="section-title">Operating Regime by Week</div>
-                        <div class="chart-container"><canvas id="advBarChart"></canvas></div>
+                <div class="section-title">Upload Raw Data File (same file as Tab 1)</div>
+                <input type="file" id="fileInput2" accept=".csv">
+            </div>
+
+            <div id="selectors2" class="card" style="display:none;">
+                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
+                    <div><label>Date/Time Column</label><select id="dateCol2"></select></div>
+                    <div><label>Cup Seconds Column</label><select id="manualCol2"></select></div>
+                    <div><label>Sensor Value Column</label><select id="sensorCol2"></select></div>
+                </div>
+                <div style="margin-top:16px;">
+                    <label>Cup Type <span style="color:red;">*</span></label>
+                    <select id="cupType2">
+                        <option value="">-- Select Cup Type --</option>
+                        <option value="EZ-Zahn4">EZ-Zahn #4</option>
+                        <option value="EZ-Zahn5">EZ-Zahn #5</option>
+                        <option value="ISO6">ISO #6</option>
+                        <option value="ISO8">ISO #8</option>
+                        <option value="ISO6_MINI">ISO #6 Mini</option>
+                        <option value="ISO8_MINI">ISO #8 Mini</option>
+                    </select>
+                </div>
+                <button onclick="processData2()" style="width:100%; margin-top:16px;">Process Raw File & Run Weekly Regime Analysis</button>
+            </div>
+
+            <div id="results2" style="display:none;">
+                <div class="metrics" style="margin-bottom:20px;">
+                    <div class="metric"><div class="metric-value" id="weeksAnalyzed">—</div><div>Weeks Analyzed</div></div>
+                    <div class="metric"><div class="metric-value good" id="normalWeeks">—</div><div>Normal Weeks</div></div>
+                    <div class="metric"><div class="metric-value warning" id="avgDiff">—</div><div>Avg |Difference|</div></div>
+                    <div class="metric"><div class="metric-value bad" id="significantShifts">—</div><div>Significant Shifts</div></div>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">Weekly Mean Difference with ±1 Std Dev Band</div>
+                    <canvas id="lineChart" height="120"></canvas>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">Operating Regime by Week (Red = Significant Jump from previous week)</div>
+                    <canvas id="barChart" height="100"></canvas>
+                </div>
+
+                <div class="card">
+                    <div class="section-title">Weekly Analysis Table</div>
+                    <div style="overflow-x:auto;">
+                        <table id="weeklyTable"><thead></thead><tbody></tbody></table>
                     </div>
                 </div>
             </div>
@@ -163,14 +196,51 @@
 
     <script>
         // ==================== TAB 1: CORRELATION TOOL ====================
-        let originalRows = [];
-        let headers = [];
-        let cleanedData = [];
-        let currentData = [];
-        let chartInstance = null;
-        let stdChartInstances = [];
+        let cleanedData1 = [];
+        let currentData1 = [];
+        let headers1 = [];
+        let originalRows1 = [];
 
-        function calculateCSt(seconds, cupType) {
+        document.getElementById('fileInput1').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            Papa.parse(file, {
+                header: false,
+                skipEmptyLines: false,
+                complete: function(results) {
+                    const rows = results.data;
+                    if (rows.length < 16) {
+                        alert("File must have headers in row 15.");
+                        return;
+                    }
+                    headers1 = rows[14].map(h => String(h || "").trim());
+                    originalRows1 = rows.slice(15).filter(r => r.length > 2);
+                    populateSelectors1();
+                    document.getElementById('selectors1').style.display = 'block';
+                    document.getElementById('shiftSection').style.display = 'block';
+                }
+            });
+        });
+
+        function populateSelectors1() {
+            const selects = ['dateCol', 'manualCol', 'sensorCol'];
+            selects.forEach(id => {
+                const sel = document.getElementById(id);
+                sel.innerHTML = '';
+                headers1.forEach((h, i) => {
+                    const opt = new Option(h || `Col ${i+1}`, i);
+                    sel.add(opt);
+                });
+            });
+            if (headers1.length >= 3) {
+                document.getElementById('dateCol').value = 0;
+                document.getElementById('manualCol').value = 1;
+                document.getElementById('sensorCol').value = 2;
+            }
+        }
+
+        function calculateCSt1(seconds, cupType) {
             if (!seconds || isNaN(seconds)) return null;
             switch(cupType) {
                 case "EZ-Zahn4": return 13.26 * seconds - (673 / seconds);
@@ -183,103 +253,19 @@
             }
         }
 
-        function calculateR2(x, y) {
-            const n = x.length;
-            if (n < 2) return 0;
-            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-            for (let i = 0; i < n; i++) {
-                sumX += x[i]; sumY += y[i]; sumXY += x[i] * y[i]; sumX2 += x[i] * x[i];
-            }
-            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            let ssRes = 0, ssTot = 0;
-            const yMean = sumY / n;
-            for (let i = 0; i < n; i++) {
-                const pred = slope * x[i] + (sumY - slope * sumX) / n;
-                ssRes += Math.pow(y[i] - pred, 2);
-                ssTot += Math.pow(y[i] - yMean, 2);
-            }
-            return ssTot > 0 ? 1 - (ssRes / ssTot) : 0;
-        }
-
-        function linearRegression(x, y) {
-            const n = x.length;
-            if (n < 2) return { slope: 0, intercept: 0, r2: 0 };
-            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-            for (let i = 0; i < n; i++) {
-                sumX += x[i]; sumY += y[i]; sumXY += x[i] * y[i]; sumX2 += x[i] * x[i];
-            }
-            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            const intercept = (sumY - slope * sumX) / n;
-            let ssRes = 0, ssTot = 0;
-            const yMean = sumY / n;
-            for (let i = 0; i < n; i++) {
-                const pred = slope * x[i] + intercept;
-                ssRes += Math.pow(y[i] - pred, 2);
-                ssTot += Math.pow(y[i] - yMean, 2);
-            }
-            const r2 = ssTot > 0 ? 1 - (ssRes / ssTot) : 0;
-            return { slope, intercept, r2 };
-        }
-
-        function standardDeviation(arr) {
-            if (arr.length < 2) return 0;
-            const mean = arr.reduce((a, b) => a + b, 0) / arr.length;
-            const variance = arr.reduce((a, b) => a + Math.pow(b - mean, 2), 0) / arr.length;
-            return Math.sqrt(variance);
-        }
-
-        document.getElementById('fileInput').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            Papa.parse(file, {
-                header: false,
-                skipEmptyLines: false,
-                complete: function(results) {
-                    const rows = results.data;
-                    if (rows.length < 16) return alert("File must have headers in row 15.");
-                    headers = rows[14].map(h => String(h || "").trim());
-                    originalRows = rows.slice(15).filter(r => r.length > 2);
-                    populateSelectors();
-                    document.getElementById('selectors').style.display = 'block';
-                }
-            });
-        });
-
-        function populateSelectors() {
-            const dateSel = document.getElementById('dateCol');
-            const manualSel = document.getElementById('manualCol');
-            const sensorSel = document.getElementById('sensorCol');
-            [dateSel, manualSel, sensorSel].forEach(sel => sel.innerHTML = '');
-            headers.forEach((h, i) => {
-                const opt = new Option(h || `Column ${i+1}`, i);
-                dateSel.add(opt.cloneNode(true));
-                manualSel.add(opt.cloneNode(true));
-                sensorSel.add(opt.cloneNode(true));
-            });
-            if (headers.length >= 3) {
-                dateSel.value = 0;
-                manualSel.value = 1;
-                sensorSel.value = 2;
-            }
-        }
-
-        function processData() {
+        function processData1() {
             const dateIdx = parseInt(document.getElementById('dateCol').value);
             const manualIdx = parseInt(document.getElementById('manualCol').value);
             const sensorIdx = parseInt(document.getElementById('sensorCol').value);
-            const cupType = document.getElementById('cupType').value;
+            const cupType = document.getElementById('cupType1').value;
 
             if (!cupType) return alert("Please select a Cup Type.");
+            if (!originalRows1.length) return alert("No data loaded.");
 
-            let rawCup = 0, rawSensor = 0;
-            originalRows.forEach(row => {
-                if (!isNaN(parseFloat(row[manualIdx]))) rawCup++;
-                if (!isNaN(parseFloat(row[sensorIdx]))) rawSensor++;
-            });
+            cleanedData1 = [];
 
-            cleanedData = [];
-            for (let i = 0; i < originalRows.length; i++) {
-                const row = originalRows[i];
+            for (let i = 0; i < originalRows1.length; i++) {
+                const row = originalRows1[i];
                 const dateTime = row[dateIdx];
                 const manualSec = parseFloat(row[manualIdx]);
                 let sensorVal = parseFloat(row[sensorIdx]);
@@ -288,8 +274,8 @@
 
                 if (isNaN(sensorVal)) {
                     let prev = null, next = null;
-                    for (let j = i-1; j >= 0; j--) { const v = parseFloat(originalRows[j][sensorIdx]); if (!isNaN(v)) { prev = v; break; } }
-                    for (let j = i+1; j < originalRows.length; j++) { const v = parseFloat(originalRows[j][sensorIdx]); if (!isNaN(v)) { next = v; break; } }
+                    for (let j = i-1; j>=0; j--) { const v = parseFloat(originalRows1[j][sensorIdx]); if (!isNaN(v)) { prev = v; break; } }
+                    for (let j = i+1; j<originalRows1.length; j++) { const v = parseFloat(originalRows1[j][sensorIdx]); if (!isNaN(v)) { next = v; break; } }
                     if (prev !== null && next !== null) sensorVal = (prev + next) / 2;
                     else if (prev !== null) sensorVal = prev;
                     else if (next !== null) sensorVal = next;
@@ -297,61 +283,61 @@
                 }
                 if (sensorVal < 0) continue;
 
-                const calcCst = calculateCSt(manualSec, cupType);
+                const calcCst = calculateCSt1(manualSec, cupType);
                 if (calcCst === null) continue;
 
-                cleanedData.push({
-                    dateTime,
-                    manualSec,
-                    sensorVal,
-                    calcCst,
+                cleanedData1.push({
+                    dateTime: dateTime,
+                    manualSec: manualSec,
+                    sensorVal: sensorVal,
+                    calcCst: calcCst,
                     difference: calcCst - sensorVal
                 });
             }
 
-            if (cleanedData.length === 0) return alert("No valid paired data found after cleaning.");
+            if (cleanedData1.length === 0) return alert("No valid paired data found.");
 
-            currentData = [...cleanedData];
-
-            // Summary
-            document.getElementById('summaryBar').style.display = 'block';
-            document.getElementById('rawTotal').textContent = originalRows.length;
-            document.getElementById('rawCup').textContent = rawCup;
-            document.getElementById('rawSensor').textContent = rawSensor;
-            document.getElementById('cleanedPoints').textContent = cleanedData.length;
-            document.getElementById('filteredPoints').textContent = currentData.length;
-
-            // Baseline Metrics
-            const cupVals = cleanedData.map(d => d.manualSec);
-            const sensorVals = cleanedData.map(d => d.sensorVal);
-            const diffVals = cleanedData.map(d => d.difference);
-
-            const baselineHTML = `
-                <div class="metric"><div class="metric-value">${Math.min(...cupVals).toFixed(2)}</div><div>Cup Sec Min</div></div>
-                <div class="metric"><div class="metric-value">${Math.max(...cupVals).toFixed(2)}</div><div>Cup Sec Max</div></div>
-                <div class="metric"><div class="metric-value">${(cupVals.reduce((a,b)=>a+b,0)/cupVals.length).toFixed(2)}</div><div>Cup Sec Avg</div></div>
-                <div class="metric"><div class="metric-value">${standardDeviation(cupVals).toFixed(2)}</div><div>Cup Sec Std</div></div>
-                <div class="metric"><div class="metric-value">${Math.min(...sensorVals).toFixed(1)}</div><div>Sensor Min</div></div>
-                <div class="metric"><div class="metric-value">${Math.max(...sensorVals).toFixed(1)}</div><div>Sensor Max</div></div>
-                <div class="metric"><div class="metric-value">${(sensorVals.reduce((a,b)=>a+b,0)/sensorVals.length).toFixed(1)}</div><div>Sensor Avg</div></div>
-                <div class="metric"><div class="metric-value">${standardDeviation(sensorVals).toFixed(1)}</div><div>Sensor Std</div></div>
-            `;
-            document.getElementById('baselineMetrics').innerHTML = baselineHTML;
-            document.getElementById('baselineSection').style.display = 'block';
-            document.getElementById('limitsSection').style.display = 'block';
-            document.getElementById('strongestSection').style.display = 'block';
-            document.getElementById('resultsSection').style.display = 'block';
-
-            renderAll();
+            currentData1 = [...cleanedData1];
+            document.getElementById('results1').style.display = 'block';
+            renderBaseline1();
+            renderTable1();
+            document.getElementById('specResults1').innerHTML = '';
         }
 
-        function applyLimits() {
+        function renderBaseline1() {
+            const cupVals = currentData1.map(d => d.manualSec);
+            const sensorVals = currentData1.map(d => d.sensorVal);
+            if (cupVals.length === 0) return;
+
+            const cupMin = Math.min(...cupVals).toFixed(2);
+            const cupMax = Math.max(...cupVals).toFixed(2);
+            const cupAvg = (cupVals.reduce((a,b)=>a+b,0)/cupVals.length).toFixed(2);
+            const cupStd = standardDeviation1(cupVals).toFixed(2);
+
+            const sensorMin = Math.min(...sensorVals).toFixed(1);
+            const sensorMax = Math.max(...sensorVals).toFixed(1);
+            const sensorAvg = (sensorVals.reduce((a,b)=>a+b,0)/sensorVals.length).toFixed(1);
+            const sensorStd = standardDeviation1(sensorVals).toFixed(1);
+
+            document.getElementById('baselineMetrics1').innerHTML = `
+                <div class="metric"><div class="metric-value">${cupMin}</div><div>Cup Min (s)</div></div>
+                <div class="metric"><div class="metric-value">${cupMax}</div><div>Cup Max (s)</div></div>
+                <div class="metric"><div class="metric-value">${cupAvg}</div><div>Cup Avg (s)</div></div>
+                <div class="metric"><div class="metric-value">${cupStd}</div><div>Cup Std Dev</div></div>
+                <div class="metric"><div class="metric-value">${sensorMin}</div><div>Sensor Min</div></div>
+                <div class="metric"><div class="metric-value">${sensorMax}</div><div>Sensor Max</div></div>
+                <div class="metric"><div class="metric-value">${sensorAvg}</div><div>Sensor Avg</div></div>
+                <div class="metric"><div class="metric-value">${sensorStd}</div><div>Sensor Std Dev</div></div>
+            `;
+        }
+
+        function applyLimits1() {
             const mLSL = parseFloat(document.getElementById('manualLSL').value);
             const mUSL = parseFloat(document.getElementById('manualUSL').value);
             const sLSL = parseFloat(document.getElementById('sensorLSL').value);
             const sUSL = parseFloat(document.getElementById('sensorUSL').value);
 
-            currentData = cleanedData.filter(d => {
+            currentData1 = cleanedData1.filter(d => {
                 let pass = true;
                 if (!isNaN(mLSL) && d.manualSec < mLSL) pass = false;
                 if (!isNaN(mUSL) && d.manualSec > mUSL) pass = false;
@@ -359,56 +345,103 @@
                 if (!isNaN(sUSL) && d.sensorVal > sUSL) pass = false;
                 return pass;
             });
-            document.getElementById('filteredPoints').textContent = currentData.length;
-            renderAll();
-        }
 
-        function resetLimits() {
-            ['manualLSL','manualUSL','sensorLSL','sensorUSL'].forEach(id => document.getElementById(id).value = '');
-            currentData = [...cleanedData];
-            document.getElementById('filteredPoints').textContent = currentData.length;
-            renderAll();
-        }
+            renderTable1();
+            const total = cleanedData1.length;
+            const cupIn = cleanedData1.filter(d => (!isNaN(mLSL) && !isNaN(mUSL)) ? (d.manualSec >= mLSL && d.manualSec <= mUSL) : true).length;
+            const sensorIn = cleanedData1.filter(d => (!isNaN(sLSL) && !isNaN(sUSL)) ? (d.sensorVal >= sLSL && d.sensorVal <= sUSL) : true).length;
 
-        function renderAll() {
-            const x = currentData.map(d => d.manualSec);
-            const y = currentData.map(d => d.sensorVal);
-            const r2 = calculateR2(x, y);
-
-            const total = cleanedData.length;
-            const mLSL = parseFloat(document.getElementById('manualLSL').value);
-            const mUSL = parseFloat(document.getElementById('manualUSL').value);
-            const sLSL = parseFloat(document.getElementById('sensorLSL').value);
-            const sUSL = parseFloat(document.getElementById('sensorUSL').value);
-
-            const cupIn = cleanedData.filter(d => (!isNaN(mLSL) && !isNaN(mUSL)) ? (d.manualSec >= mLSL && d.manualSec <= mUSL) : true).length;
-            const sensorIn = cleanedData.filter(d => (!isNaN(sLSL) && !isNaN(sUSL)) ? (d.sensorVal >= sLSL && d.sensorVal <= sUSL) : true).length;
-
-            document.getElementById('specResults').innerHTML = `
-                <div class="spec-row"><span>Cup Seconds in spec:</span> <strong>${cupIn} / ${total} (${((cupIn/total)*100).toFixed(1)}%)</strong></div>
-                <div class="spec-row"><span>Sensor Value in spec:</span> <strong>${sensorIn} / ${total} (${((sensorIn/total)*100).toFixed(1)}%)</strong></div>
+            document.getElementById('specResults1').innerHTML = `
+                <div>Cup Seconds in spec: <strong>${cupIn} / ${total} (${((cupIn/total)*100).toFixed(1)}%)</strong></div>
+                <div>Sensor Value in spec: <strong>${sensorIn} / ${total} (${((sensorIn/total)*100).toFixed(1)}%)</strong></div>
             `;
-
-            renderTable();
         }
 
-        function renderTable() {
-            const thead = document.querySelector('#resultTable thead');
-            const tbody = document.querySelector('#resultTable tbody');
+        function resetLimits1() {
+            document.getElementById('manualLSL').value = '';
+            document.getElementById('manualUSL').value = '';
+            document.getElementById('sensorLSL').value = '';
+            document.getElementById('sensorUSL').value = '';
+            currentData1 = [...cleanedData1];
+            renderTable1();
+            document.getElementById('specResults1').innerHTML = '';
+        }
+
+        function runStrongest1() {
+            if (currentData1.length < 3) return alert("Not enough data.");
+
+            const diffs = currentData1.map(d => d.difference);
+            const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
+            const stdDiff = standardDeviation1(diffs);
+
+            const kValues = [0.5, 1.0, 1.5, 2.0];
+            let html = '<table style="width:100%;"><thead><tr><th>k</th><th>R²</th><th>Slope</th><th>Intercept</th><th>Formula</th><th>Points</th></tr></thead><tbody>';
+
+            kValues.forEach(k => {
+                const filtered = currentData1.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
+                if (filtered.length < 3) {
+                    html += `<tr><td>${k}</td><td colspan="5">Not enough points</td></tr>`;
+                    return;
+                }
+                const x = filtered.map(d => d.manualSec);
+                const y = filtered.map(d => d.sensorVal);
+                const reg = linearRegression1(x, y);
+                const formula = `Sensor = ${reg.slope.toFixed(3)} × CupSec + ${reg.intercept.toFixed(1)}`;
+                html += `<tr>
+                    <td><strong>${k}</strong></td>
+                    <td><strong>${reg.r2.toFixed(4)}</strong></td>
+                    <td>${reg.slope.toFixed(3)}</td>
+                    <td>${reg.intercept.toFixed(1)}</td>
+                    <td style="font-family:monospace; font-size:0.85rem;">${formula}</td>
+                    <td>${filtered.length}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('strongestResults1').innerHTML = html;
+        }
+
+        function linearRegression1(x, y) {
+            const n = x.length;
+            if (n < 2) return { slope: 0, intercept: 0, r2: 0 };
+            let sumX=0, sumY=0, sumXY=0, sumX2=0;
+            for (let i=0; i<n; i++) { sumX+=x[i]; sumY+=y[i]; sumXY+=x[i]*y[i]; sumX2+=x[i]*x[i]; }
+            const slope = (n*sumXY - sumX*sumY) / (n*sumX2 - sumX*sumX);
+            const intercept = (sumY - slope*sumX) / n;
+            let ssRes=0, ssTot=0;
+            const yMean = sumY / n;
+            for (let i=0; i<n; i++) {
+                const pred = slope * x[i] + intercept;
+                ssRes += (y[i] - pred)**2;
+                ssTot += (y[i] - yMean)**2;
+            }
+            const r2 = ssTot > 0 ? 1 - (ssRes / ssTot) : 0;
+            return { slope, intercept, r2 };
+        }
+
+        function standardDeviation1(arr) {
+            if (arr.length < 2) return 0;
+            const mean = arr.reduce((a,b)=>a+b,0) / arr.length;
+            const variance = arr.reduce((a,b)=>a + Math.pow(b-mean,2),0) / arr.length;
+            return Math.sqrt(variance);
+        }
+
+        function renderTable1() {
+            const thead = document.querySelector('#resultTable1 thead');
+            const tbody = document.querySelector('#resultTable1 tbody');
             thead.innerHTML = '';
             tbody.innerHTML = '';
 
             const headerRow = document.createElement('tr');
-            ['Date/Time', 'Cup Seconds', 'Sensor Value', 'Calculated cSt', 'Ratio (cSt/Sensor)', 'Difference'].forEach(text => {
+            ['Date/Time', 'Cup Seconds', 'Sensor Value', 'Calculated cSt', 'Ratio', 'Difference'].forEach(text => {
                 const th = document.createElement('th');
                 th.textContent = text;
                 headerRow.appendChild(th);
             });
             thead.appendChild(headerRow);
 
-            currentData.forEach(row => {
-                const ratio = row.sensorVal !== 0 ? (row.calcCst / row.sensorVal).toFixed(3) : 'N/A';
+            currentData1.forEach(row => {
                 const tr = document.createElement('tr');
+                const ratio = row.sensorVal !== 0 ? (row.calcCst / row.sensorVal).toFixed(3) : '—';
                 tr.innerHTML = `
                     <td>${row.dateTime}</td>
                     <td>${row.manualSec.toFixed(2)}</td>
@@ -421,249 +454,340 @@
             });
         }
 
-        function runStrongestCorrelation() {
-            if (currentData.length === 0) return alert("No data to analyze.");
-
-            const diffs = currentData.map(d => d.difference);
-            const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-            const stdDiff = standardDeviation(diffs);
-
-            const kValues = [0.5, 1.0, 1.5, 2.0];
-            let html = '<table style="width:100%;"><thead><tr><th>k</th><th>R²</th><th>Slope</th><th>Intercept</th><th>Formula</th><th>Points</th><th>% of Current</th></tr></thead><tbody>';
-
-            kValues.forEach(k => {
-                const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
-                if (filtered.length < 3) {
-                    html += `<tr><td>${k}</td><td colspan="6">Not enough points</td></tr>`;
-                    return;
-                }
-                const x = filtered.map(d => d.manualSec);
-                const y = filtered.map(d => d.sensorVal);
-                const reg = linearRegression(x, y);
-                const pct = ((filtered.length / currentData.length) * 100).toFixed(1);
-                const formula = `Sensor = ${reg.slope.toFixed(2)} × CupSec + ${reg.intercept.toFixed(1)}`;
-                html += `<tr>
-                    <td>${k}</td>
-                    <td><strong>${reg.r2.toFixed(4)}</strong></td>
-                    <td>${reg.slope.toFixed(3)}</td>
-                    <td>${reg.intercept.toFixed(1)}</td>
-                    <td style="font-family:monospace; font-size:0.85rem;">${formula}</td>
-                    <td>${filtered.length}</td>
-                    <td>${pct}%</td>
-                </tr>`;
+        function downloadCSV1() {
+            if (!currentData1.length) return;
+            let csv = 'DateTime,Cup_Seconds,Sensor_Value,Calculated_cSt,Ratio,Difference\n';
+            currentData1.forEach(r => {
+                const ratio = r.sensorVal !== 0 ? (r.calcCst / r.sensorVal).toFixed(4) : '';
+                csv += `${r.dateTime},${r.manualSec},${r.sensorVal},${r.calcCst.toFixed(2)},${ratio},${r.difference.toFixed(2)}\n`;
             });
-            html += '</tbody></table>';
-            document.getElementById('strongestResults').innerHTML = html;
-
-            // Render small charts with formulas
-            renderStdScatterPlots(kValues, meanDiff, stdDiff);
-        }
-
-        function renderStdScatterPlots(kValues, meanDiff, stdDiff) {
-            const container = document.getElementById('stdCharts');
-            container.innerHTML = '';
-            stdChartInstances.forEach(c => c.destroy());
-            stdChartInstances = [];
-
-            kValues.forEach(k => {
-                const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
-                if (filtered.length < 3) return;
-
-                const reg = linearRegression(filtered.map(d => d.manualSec), filtered.map(d => d.sensorVal));
-                const formula = `y = ${reg.slope.toFixed(2)}x + ${reg.intercept.toFixed(1)} (R²=${reg.r2.toFixed(3)})`;
-
-                const div = document.createElement('div');
-                div.innerHTML = `
-                    <div style="font-size:0.8rem; margin-bottom:4px; font-weight:600;">k = ${k} — ${formula}</div>
-                    <div class="chart-container small-chart"><canvas id="stdChart_${k}"></canvas></div>
-                `;
-                container.appendChild(div);
-
-                const ctx = div.querySelector('canvas');
-                const dataPoints = filtered.map(d => ({ x: d.manualSec, y: d.sensorVal }));
-
-                const chart = new Chart(ctx, {
-                    type: 'scatter',
-                    data: { datasets: [{ label: `k=${k}`, data: dataPoints, backgroundColor: '#00d4ff' }] },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false }, title: { display: true, text: formula, font: { size: 11 } } },
-                        scales: {
-                            x: { title: { display: true, text: 'Cup Seconds', font: { size: 10 } } },
-                            y: { title: { display: true, text: 'Sensor Value', font: { size: 10 } } }
-                        }
-                    }
-                });
-                stdChartInstances.push(chart);
-            });
-        }
-
-        function downloadCSV() {
-            if (!currentData.length) return;
-
-            let csv = 'DateTime,Cup_Seconds,Sensor_Value,Calculated_cSt,Ratio_cSt_per_Sensor,Difference\n';
-            currentData.forEach(r => {
-                const ratio = r.sensorVal !== 0 ? (r.calcCst / r.sensorVal) : '';
-                csv += `${r.dateTime},${r.manualSec},${r.sensorVal},${r.calcCst},${ratio},${r.difference}\n`;
-            });
-
-            // Add STD + Regression metadata
-            if (currentData.length > 2) {
-                const diffs = currentData.map(d => d.difference);
+            if (currentData1.length > 3) {
+                const diffs = currentData1.map(d => d.difference);
                 const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-                const stdDiff = standardDeviation(diffs);
-                csv += '\n# STD Filter + Linear Regression Results\n';
-                const kValues = [0.5, 1.0, 1.5, 2.0];
-                kValues.forEach(k => {
-                    const filtered = currentData.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
+                const stdDiff = standardDeviation1(diffs);
+                csv += '\n# STD Filter + Regression Results\n';
+                [0.5,1.0,1.5,2.0].forEach(k => {
+                    const filtered = currentData1.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
                     if (filtered.length < 3) return;
-                    const reg = linearRegression(filtered.map(d => d.manualSec), filtered.map(d => d.sensorVal));
-                    csv += `# k=${k}, R2=${reg.r2.toFixed(4)}, Slope=${reg.slope.toFixed(4)}, Intercept=${reg.intercept.toFixed(2)}, Points=${filtered.length}\n`;
+                    const reg = linearRegression1(filtered.map(d=>d.manualSec), filtered.map(d=>d.sensorVal));
+                    csv += `# k=${k}, R2=${reg.r2.toFixed(4)}, Slope=${reg.slope.toFixed(4)}, Intercept=${reg.intercept.toFixed(2)}, Formula=Sensor=${reg.slope.toFixed(3)}*CupSec+${reg.intercept.toFixed(1)}, Points=${filtered.length}\n`;
                 });
             }
-
             const blob = new Blob([csv], { type: 'text/csv' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
-            a.download = 'viscosity_data_with_regression.csv';
+            a.download = 'viscosity_cleaned_with_regression.csv';
             a.click();
         }
 
-        // ==================== TAB 2: ADVANCED WEEKLY ANALYSIS ====================
-        let advChartLine = null;
-        let advChartBar = null;
+        // Shift logic for Tab 1
+        function applyShifts1() {
+            if (!currentData1.length) return alert("Process data in Tab 1 first.");
 
-        document.getElementById('advFileInput').addEventListener('change', function(e) {
+            const shifts = [
+                { name: document.getElementById('shift1Name').value || "Shift 1", start: document.getElementById('shift1Start').value, end: document.getElementById('shift1End').value },
+                { name: document.getElementById('shift2Name').value || "Shift 2", start: document.getElementById('shift2Start').value, end: document.getElementById('shift2End').value },
+                { name: document.getElementById('shift3Name').value || "Shift 3", start: document.getElementById('shift3Start').value, end: document.getElementById('shift3End').value }
+            ].filter(s => s.start && s.end);
+
+            const results = shifts.map(shift => {
+                const shiftData = currentData1.filter(row => {
+                    if (!row.dateTime) return false;
+                    const timeStr = row.dateTime.split(' ')[1] || row.dateTime.split('T')[1] || '';
+                    if (!timeStr) return false;
+                    const time = timeStr.substring(0,5);
+                    return isTimeInShift(time, shift.start, shift.end);
+                });
+
+                if (shiftData.length < 3) {
+                    return { name: shift.name, points: shiftData.length, r2: 'N/A', formula: 'N/A', meanDiff: 'N/A', stdDiff: 'N/A' };
+                }
+
+                const x = shiftData.map(d => d.manualSec);
+                const y = shiftData.map(d => d.sensorVal);
+                const reg = linearRegression1(x, y);
+                const diffs = shiftData.map(d => d.difference);
+                const meanD = diffs.reduce((a,b)=>a+b,0) / diffs.length;
+                const stdD = standardDeviation1(diffs);
+
+                return {
+                    name: shift.name,
+                    points: shiftData.length,
+                    r2: reg.r2.toFixed(4),
+                    formula: `Sensor = ${reg.slope.toFixed(3)} × CupSec + ${reg.intercept.toFixed(1)}`,
+                    meanDiff: meanD.toFixed(1),
+                    stdDiff: stdD.toFixed(1)
+                };
+            });
+
+            let html = '<table style="width:100%;"><thead><tr><th>Shift</th><th>Points</th><th>R²</th><th>Regression Formula</th><th>Mean Diff</th><th>Std Diff</th></tr></thead><tbody>';
+            results.forEach(r => {
+                html += `<tr>
+                    <td><strong>${r.name}</strong></td>
+                    <td>${r.points}</td>
+                    <td>${r.r2}</td>
+                    <td style="font-family:monospace; font-size:0.85rem;">${r.formula}</td>
+                    <td>${r.meanDiff}</td>
+                    <td>${r.stdDiff}</td>
+                </tr>`;
+            });
+            html += '</tbody></table>';
+            document.getElementById('shiftResults1').innerHTML = html;
+        }
+
+        function isTimeInShift(time, start, end) {
+            const t = timeToMinutes(time);
+            const s = timeToMinutes(start);
+            const e = timeToMinutes(end);
+            if (s < e) return t >= s && t < e;
+            return t >= s || t < e; // overnight
+        }
+
+        function timeToMinutes(t) {
+            const [h,m] = t.split(':').map(Number);
+            return h*60 + m;
+        }
+
+        // ==================== TAB 2: ADVANCED WEEKLY ANALYSIS ====================
+        let cleanedData2 = [];
+        let headers2 = [];
+        let originalRows2 = [];
+
+        document.getElementById('fileInput2').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
             Papa.parse(file, {
-                header: true,
-                skipEmptyLines: true,
+                header: false,
+                skipEmptyLines: false,
                 complete: function(results) {
-                    const data = results.data.filter(row => row.DateTime && row.Difference);
-                    if (data.length === 0) return alert("No valid data found. Make sure columns are DateTime, Cup_Seconds, Sensor_Value, Difference.");
-
-                    processAdvancedData(data);
+                    const rows = results.data;
+                    if (rows.length < 16) {
+                        alert("File must have headers in row 15.");
+                        return;
+                    }
+                    headers2 = rows[14].map(h => String(h || "").trim());
+                    originalRows2 = rows.slice(15).filter(r => r.length > 2);
+                    populateSelectors2();
+                    document.getElementById('selectors2').style.display = 'block';
                 }
             });
         });
 
-        function processAdvancedData(data) {
-            // Group by week (Monday start)
-            const weekly = {};
-            data.forEach(row => {
-                const dt = new Date(row.DateTime);
-                // Get Monday of the week
-                const day = dt.getDay();
-                const diff = dt.getDate() - day + (day === 0 ? -6 : 1);
-                const monday = new Date(dt.setDate(diff));
-                const weekKey = monday.toISOString().slice(0,10);
-
-                if (!weekly[weekKey]) weekly[weekKey] = [];
-                weekly[weekKey].push({
-                    diff: parseFloat(row.Difference),
-                    sensor: parseFloat(row.Sensor_Value)
+        function populateSelectors2() {
+            const selects = ['dateCol2', 'manualCol2', 'sensorCol2'];
+            selects.forEach(id => {
+                const sel = document.getElementById(id);
+                sel.innerHTML = '';
+                headers2.forEach((h, i) => {
+                    const opt = new Option(h || `Col ${i+1}`, i);
+                    sel.add(opt);
                 });
             });
+            if (headers2.length >= 3) {
+                document.getElementById('dateCol2').value = 0;
+                document.getElementById('manualCol2').value = 1;
+                document.getElementById('sensorCol2').value = 2;
+            }
+        }
 
-            const weeks = Object.keys(weekly).sort();
-            const weekStats = weeks.map(week => {
-                const diffs = weekly[week].map(d => d.diff);
-                const sensors = weekly[week].map(d => d.sensor);
+        function processData2() {
+            const dateIdx = parseInt(document.getElementById('dateCol2').value);
+            const manualIdx = parseInt(document.getElementById('manualCol2').value);
+            const sensorIdx = parseInt(document.getElementById('sensorCol2').value);
+            const cupType = document.getElementById('cupType2').value;
+
+            if (!cupType) return alert("Please select a Cup Type.");
+            if (!originalRows2.length) return alert("No data loaded.");
+
+            cleanedData2 = [];
+
+            for (let i = 0; i < originalRows2.length; i++) {
+                const row = originalRows2[i];
+                const dateTime = row[dateIdx];
+                const manualSec = parseFloat(row[manualIdx]);
+                let sensorVal = parseFloat(row[sensorIdx]);
+
+                if (isNaN(manualSec)) continue;
+
+                if (isNaN(sensorVal)) {
+                    let prev = null, next = null;
+                    for (let j = i-1; j>=0; j--) { const v = parseFloat(originalRows2[j][sensorIdx]); if (!isNaN(v)) { prev = v; break; } }
+                    for (let j = i+1; j<originalRows2.length; j++) { const v = parseFloat(originalRows2[j][sensorIdx]); if (!isNaN(v)) { next = v; break; } }
+                    if (prev !== null && next !== null) sensorVal = (prev + next) / 2;
+                    else if (prev !== null) sensorVal = prev;
+                    else if (next !== null) sensorVal = next;
+                    else continue;
+                }
+                if (sensorVal < 0) continue;
+
+                const calcCst = calculateCSt1(manualSec, cupType); // reuse function
+                if (calcCst === null) continue;
+
+                cleanedData2.push({
+                    dateTime: dateTime,
+                    manualSec: manualSec,
+                    sensorVal: sensorVal,
+                    calcCst: calcCst,
+                    difference: calcCst - sensorVal
+                });
+            }
+
+            if (cleanedData2.length === 0) return alert("No valid paired data found after processing.");
+
+            // Now run weekly analysis on cleanedData2
+            runWeeklyAnalysis(cleanedData2);
+        }
+
+        function runWeeklyAnalysis(data) {
+            if (!data.length) return;
+
+            const weeks = {};
+            data.forEach(row => {
+                if (!row.dateTime) return;
+                const date = new Date(row.dateTime);
+                if (isNaN(date)) return;
+                const weekStart = getWeekStart(date);
+                const key = weekStart.toISOString().split('T')[0];
+                if (!weeks[key]) weeks[key] = [];
+                weeks[key].push(row);
+            });
+
+            const sortedKeys = Object.keys(weeks).sort();
+            const weeklyData = sortedKeys.map((key, idx) => {
+                const weekRows = weeks[key];
+                const diffs = weekRows.map(r => r.difference);
+                const sensors = weekRows.map(r => r.sensorVal);
                 const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-                const stdDiff = standardDeviation(diffs);
+                const stdDiff = standardDeviation2(diffs);
                 const meanSensor = sensors.reduce((a,b)=>a+b,0) / sensors.length;
-                const r2 = calculateR2(weekly[week].map(d => d.sensor), weekly[week].map(d => d.diff)); // rough
 
-                // Regime classification (simplified from Claude logic)
+                let significantShift = false;
+                if (idx > 0) {
+                    const prevKey = sortedKeys[idx-1];
+                    const prevDiffs = weeks[prevKey].map(r => r.difference);
+                    const prevMean = prevDiffs.reduce((a,b)=>a+b,0) / prevDiffs.length;
+                    if (Math.abs(meanDiff - prevMean) > 15) significantShift = true;
+                }
+
                 let regime = "Transition";
                 let color = "#f59e0b";
-                if (Math.abs(meanDiff + 15) < 10 && stdDiff < 15) { regime = "Normal"; color = "#22c55e"; }
-                else if (stdDiff > 40 || Math.abs(meanDiff) > 50) { regime = "Drift/High"; color = "#ef4444"; }
-                else if (meanSensor < 85) { regime = "Low Visc"; color = "#06b6d4"; }
+                if (meanDiff >= -20 && meanDiff <= -10 && !significantShift) {
+                    regime = "Normal";
+                    color = "#22c55e";
+                } else if (significantShift || Math.abs(meanDiff) > 40) {
+                    regime = "Drift/High";
+                    color = "#ef4444";
+                } else if (meanDiff < -25) {
+                    regime = "Low Visc";
+                    color = "#06b6d4";
+                }
 
                 return {
-                    week,
-                    count: diffs.length,
-                    meanDiff: meanDiff.toFixed(1),
-                    stdDiff: stdDiff.toFixed(1),
-                    meanSensor: meanSensor.toFixed(1),
-                    regime,
-                    color
+                    week: key,
+                    count: weekRows.length,
+                    meanDiff: meanDiff,
+                    stdDiff: stdDiff,
+                    meanSensor: meanSensor,
+                    regime: regime,
+                    color: color,
+                    significantShift: significantShift
                 };
             });
 
-            // Render metrics
-            const advMetrics = document.getElementById('advMetrics');
-            advMetrics.innerHTML = `
-                <div class="metric"><div class="metric-value">${data.length}</div><div>Total Points</div></div>
-                <div class="metric"><div class="metric-value">${weeks.length}</div><div>Weeks</div></div>
-                <div class="metric"><div class="metric-value">${weekStats.filter(w => w.regime === 'Normal').length}</div><div>Normal Weeks</div></div>
-                <div class="metric"><div class="metric-value">${weekStats.filter(w => w.regime !== 'Normal').length}</div><div>Warning/Bad Weeks</div></div>
-            `;
+            renderWeeklyResults(weeklyData);
+        }
 
-            // Weekly Table
-            let tableHTML = `<table><thead><tr><th>Week</th><th>Points</th><th>Mean Diff</th><th>Std Diff</th><th>Mean Sensor</th><th>Regime</th></tr></thead><tbody>`;
-            weekStats.forEach(w => {
-                tableHTML += `<tr>
-                    <td>${w.week}</td>
-                    <td>${w.count}</td>
-                    <td>${w.meanDiff}</td>
-                    <td>${w.stdDiff}</td>
-                    <td>${w.meanSensor}</td>
-                    <td style="color:${w.color}; font-weight:600;">${w.regime}</td>
-                </tr>`;
-            });
-            tableHTML += `</tbody></table>`;
-            document.getElementById('weeklyTable').innerHTML = tableHTML;
+        function getWeekStart(date) {
+            const d = new Date(date);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            return new Date(d.setDate(diff));
+        }
 
-            // Charts
-            if (advChartLine) advChartLine.destroy();
-            if (advChartBar) advChartBar.destroy();
+        function standardDeviation2(arr) {
+            if (arr.length < 2) return 0;
+            const mean = arr.reduce((a,b)=>a+b,0) / arr.length;
+            return Math.sqrt(arr.reduce((a,b)=>a + Math.pow(b-mean,2),0) / arr.length);
+        }
 
-            const ctxLine = document.getElementById('advLineChart');
-            advChartLine = new Chart(ctxLine, {
+        function renderWeeklyResults(weeklyData) {
+            document.getElementById('results2').style.display = 'block';
+
+            const normalCount = weeklyData.filter(w => w.regime === "Normal").length;
+            const avgAbsDiff = (weeklyData.reduce((a,w)=>a + Math.abs(w.meanDiff),0) / weeklyData.length).toFixed(1);
+            const sigShifts = weeklyData.filter(w => w.significantShift).length;
+
+            document.getElementById('weeksAnalyzed').textContent = weeklyData.length;
+            document.getElementById('normalWeeks').textContent = normalCount;
+            document.getElementById('avgDiff').textContent = avgAbsDiff + " cP";
+            document.getElementById('significantShifts').textContent = sigShifts;
+
+            // Line Chart
+            const ctxLine = document.getElementById('lineChart');
+            if (window.lineChartInstance) window.lineChartInstance.destroy();
+            window.lineChartInstance = new Chart(ctxLine, {
                 type: 'line',
                 data: {
-                    labels: weekStats.map(w => w.week),
-                    datasets: [{
-                        label: 'Mean Difference',
-                        data: weekStats.map(w => parseFloat(w.meanDiff)),
-                        borderColor: '#3b82f6',
-                        tension: 0.3
-                    }]
+                    labels: weeklyData.map(w => w.week),
+                    datasets: [
+                        { label: 'Mean Difference', data: weeklyData.map(w => w.meanDiff), borderColor: '#3b82f6', tension: 0.3 },
+                        { label: '+1 Std Dev', data: weeklyData.map(w => w.meanDiff + w.stdDiff), borderColor: '#64748b', borderDash: [3,3], tension: 0.3 },
+                        { label: '-1 Std Dev', data: weeklyData.map(w => w.meanDiff - w.stdDiff), borderColor: '#64748b', borderDash: [3,3], tension: 0.3 }
+                    ]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true, plugins: { legend: { position: 'top' } } }
             });
 
-            const ctxBar = document.getElementById('advBarChart');
-            advChartBar = new Chart(ctxBar, {
+            // Bar Chart
+            const ctxBar = document.getElementById('barChart');
+            if (window.barChartInstance) window.barChartInstance.destroy();
+            window.barChartInstance = new Chart(ctxBar, {
                 type: 'bar',
                 data: {
-                    labels: weekStats.map(w => w.week),
+                    labels: weeklyData.map(w => w.week),
                     datasets: [{
-                        label: 'Points per Week',
-                        data: weekStats.map(w => w.count),
-                        backgroundColor: weekStats.map(w => w.color)
+                        label: 'Mean |Difference|',
+                        data: weeklyData.map(w => Math.abs(w.meanDiff)),
+                        backgroundColor: weeklyData.map(w => w.color)
                     }]
                 },
-                options: { responsive: true, maintainAspectRatio: false }
+                options: { responsive: true }
             });
 
-            document.getElementById('advResults').style.display = 'block';
+            // Table
+            const thead = document.querySelector('#weeklyTable thead');
+            const tbody = document.querySelector('#weeklyTable tbody');
+            thead.innerHTML = `<tr><th>Week</th><th>Regime</th><th>Mean Diff</th><th>Std Dev</th><th>Significant Shift?</th><th>Points</th></tr>`;
+            tbody.innerHTML = '';
+            weeklyData.forEach(w => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${w.week}</td>
+                    <td style="color:${w.color}; font-weight:700;">${w.regime}</td>
+                    <td>${w.meanDiff.toFixed(1)}</td>
+                    <td>${w.stdDiff.toFixed(1)}</td>
+                    <td style="color:${w.significantShift ? '#ef4444' : '#22c55e'}; font-weight:700;">${w.significantShift ? 'YES - Big Jump' : 'No'}</td>
+                    <td>${w.count}</td>
+                `;
+                tbody.appendChild(tr);
+            });
         }
 
-        function switchTab(tabIndex) {
-            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
-            document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
-            document.getElementById('tab' + tabIndex).classList.add('active');
-            document.querySelectorAll('.tab')[tabIndex].classList.add('active');
-        }
+        function switchTab(tab) {
+            document.getElementById('tab1').classList.remove('active');
+            document.getElementById('tab2').classList.remove('active');
+            document.getElementById('tab1-btn').classList.remove('active');
+            document.getElementById('tab2-btn').classList.remove('active');
 
-        // Initial message
-        console.log('%c[BETA-COORELATION v6] Tool loaded successfully. Both tabs ready.', 'color:#00d4ff');
+            if (tab === 1) {
+                document.getElementById('tab1').classList.add('active');
+                document.getElementById('tab1-btn').classList.add('active');
+            } else {
+                document.getElementById('tab2').classList.add('active');
+                document.getElementById('tab2-btn').classList.add('active');
+            }
+        }
     </script>
 </body>
 </html>
