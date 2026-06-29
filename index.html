@@ -5,341 +5,314 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Shell Control Correlation Tool v2.0</title>
 
-https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <style>
-body { font-family: system-ui; background:#0a0a0a; color:#fff; padding:20px; }
+body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a0a; color:#fff; padding:20px; margin:0; }
 .container { max-width:1400px; margin:auto; }
 .card { background:#111; padding:20px; border-radius:16px; margin-bottom:20px; border:1px solid #222; }
-.section-title { color:#00d4ff; font-weight:600; margin-bottom:10px; }
-button { background:#00d4ff; color:#000; padding:10px 20px; border-radius:999px; border:none; cursor:pointer; }
-select,input { width:100%; padding:8px; background:#1a1a1a; color:#fff; border:1px solid #333; border-radius:8px; }
-.chart { height:350px; }
+.section-title { color:#00d4ff; font-weight:600; margin-bottom:10px; font-size:18px; }
+button { background:#00d4ff; color:#000; padding:10px 20px; border-radius:999px; border:none; cursor:pointer; font-weight:600; margin-top:10px; }
+button:hover { background:#00b8d9; }
+select, input { width:100%; padding:8px; background:#1a1a1a; color:#fff; border:1px solid #333; border-radius:8px; margin:5px 0; box-sizing:border-box; }
+label { display:block; margin-top:10px; color:#aaa; font-size:14px; }
+.chart-container { height:400px; margin-top:20px; }
+.status { color:#0f0; margin-top:10px; font-size:14px; }
+.error { color:#f55; margin-top:10px; font-size:14px; }
+.metric { display:inline-block; background:#1a1a1a; padding:10px 15px; border-radius:8px; margin:5px; border:1px solid #00d4ff; }
+.metric-label { color:#888; font-size:12px; }
+.metric-value { color:#00d4ff; font-size:18px; font-weight:600; }
+table { width:100%; border-collapse:collapse; margin-top:10px; }
+th, td { padding:8px; text-align:left; border-bottom:1px solid #333; }
+th { color:#00d4ff; }
+tr.best { background:#0a2a1a; }
 </style>
 </head>
 
 <body>
 <div class="container">
-<h1>Shell Control Tool v2.0</h1>
+<h1 style="color:#00d4ff;">Shell Control Correlation Tool v2.0</h1>
 
 <div class="card">
-<div class="section-title">Upload CSV</div>
-<input type="file" id="fileInput">
+<div class="section-title">1. Upload CSV File</div>
+<input type="file" id="fileInput" accept=".csv">
+<div id="loadStatus" class="status"></div>
 </div>
 
 <div id="controls" class="card" style="display:none;">
-<div class="section-title">Column Mapping</div>
+<div class="section-title">2. Column Mapping</div>
+<label>Date/Time Column:</label>
 <select id="dateCol"></select>
+<label>Manual Cup Seconds Column:</label>
 <select id="manualCol"></select>
+<label>Sensor cP Column:</label>
 <select id="sensorCol"></select>
+<label>Cup Type:</label>
 <select id="cupType">
-<option value="">Select Cup</option>
+<option value="">-- Select Cup --</option>
 <option value="EZ-Zahn4">EZ-Zahn #4</option>
 <option value="EZ-Zahn5">EZ-Zahn #5</option>
 <option value="ISO6">ISO #6</option>
 <option value="ISO8">ISO #8</option>
 </select>
-<button onclick="process()">Process</button>
+<button onclick="process()">Process Data</button>
 </div>
 
 <div id="results" class="card" style="display:none;">
-<div class="section-title">Best Model</div>
+<div class="section-title">3. Best Regression Model</div>
 <div id="bestModel"></div>
+<div id="modelTable"></div>
+<div class="chart-container">
 <canvas id="chart"></canvas>
+</div>
 </div>
 
 </div>
 
 <script>
-// =========================
-// STATE
-// =========================
 let rows = [];
 let headers = [];
 let data = [];
+let chartInstance = null;
 
-// =========================
-// CUP FORMULAS (UNCHANGED)
-// =========================
 function cSt(sec, type){
-if(!sec) return null;
-switch(type){
-case "EZ-Zahn4": return 13.26*sec - (673/sec);
-case "EZ-Zahn5": return 23.56*sec - (744/sec);
-case "ISO6": return 6.9*sec - (570/sec);
-case "ISO8": return 21.78*sec - (306/sec);
+  if(!sec || sec <= 0) return null;
+  switch(type){
+    case "EZ-Zahn4": return 13.26*sec - (673/sec);
+    case "EZ-Zahn5": return 23.56*sec - (744/sec);
+    case "ISO6":     return 6.9*sec  - (570/sec);
+    case "ISO8":     return 21.78*sec - (306/sec);
+  }
+  return null;
 }
-}
 
-// =========================
-// CSV LOAD (ROBUST)
-// =========================
-document.getElementById('fileInput').addEventListener('change', e=>{
-Papa.parse(e.target.files[0], {
-complete: res=>{
-let r = res.data;
-
-// auto-detect header row
-let idx = [14,13,15].find(i =>
-r[i] && r[i].some(x=>String(x).toLowerCase().includes("date"))
-);
-
-headers = r[idx];
-rows = r.slice(idx+1);
-
-let selects = ["dateCol","manualCol","sensorCol"];
-selects.forEach(id=>{
-let sel = document.getElementById(id);
-sel.innerHTML="";
-headers.forEach((h,i)=>{
-let o=new Option(h,i);
-sel.add(o);
+document.getElementById('fileInput').addEventListener('change', function(e){
+  const file = e.target.files[0];
+  if(!file){ return; }
+  document.getElementById('loadStatus').textContent = 'Reading ' + file.name + ' ...';
+  Papa.parse(file, {
+    skipEmptyLines: true,
+    complete: function(res){
+      try {
+        const r = res.data;
+        let idx = -1;
+        for(let i=12; i<Math.min(r.length, 20); i++){
+          if(r[i] && r[i].some(x => String(x).toLowerCase().includes("date"))){
+            idx = i; break;
+          }
+        }
+        if(idx === -1){ idx = 14; }
+        headers = r[idx].map(h => String(h).trim());
+        rows = r.slice(idx+1);
+        ["dateCol","manualCol","sensorCol"].forEach(id => {
+          const sel = document.getElementById(id);
+          sel.innerHTML = "";
+          headers.forEach((h,i) => { if(h){ sel.add(new Option(h, i)); } });
+        });
+        headers.forEach((h,i) => {
+          const hl = h.toLowerCase();
+          if(hl.includes('date') && hl.includes('time')) document.getElementById('dateCol').value = i;
+          if(hl.includes('zahn') || hl.includes('efflux') || hl.includes('cup')) document.getElementById('manualCol').value = i;
+          if(hl.includes('viscosity') || hl.includes('cp')) document.getElementById('sensorCol').value = i;
+        });
+        document.getElementById('controls').style.display = 'block';
+        document.getElementById('loadStatus').textContent =
+          '✓ Loaded ' + rows.length + ' rows, ' + headers.length + ' columns. Headers on row ' + (idx+1) + '.';
+      } catch(err) {
+        document.getElementById('loadStatus').className = 'error';
+        document.getElementById('loadStatus').textContent = '✗ Error: ' + err.message;
+        console.error(err);
+      }
+    },
+    error: function(err){
+      document.getElementById('loadStatus').className = 'error';
+      document.getElementById('loadStatus').textContent = '✗ Parse error: ' + err.message;
+    }
+  });
 });
-});
 
-document.getElementById("controls").style.display="block";
-}
-});
-});
-
-// =========================
-// MAIN PROCESS
-// =========================
 function process(){
-let d = parseInt(dateCol.value);
-let m = parseInt(manualCol.value);
-let s = parseInt(sensorCol.value);
-let type = cupType.value;
-
-data = [];
-
-rows.forEach(r=>{
-let sec = parseFloat(r[m]);
-let sensor = parseFloat(r[s]);
-
-if(!sec || !sensor || sensor<0) return;
-
-let calc = cSt(sec,type);
-data.push({x:sec,y:sensor,p:calc});
-});
-
-// run models
-let models = runModels(data.map(d=>d.x), data.map(d=>d.y));
-let best = models.sort((a,b)=>b.r2-a.r2)[0];
-
-document.getElementById("bestModel").innerHTML =
-"Best: "+best.name+" | R²="+best.r2.toFixed(3);
-
-renderChart(data, models);
-
-document.getElementById("results").style.display="block";
+  const m = parseInt(document.getElementById('manualCol').value);
+  const s = parseInt(document.getElementById('sensorCol').value);
+  const type = document.getElementById('cupType').value;
+  data = [];
+  rows.forEach(r => {
+    if(!r || !r[m] || !r[s]) return;
+    const sec = parseFloat(r[m]);
+    const sensor = parseFloat(r[s]);
+    if(!isFinite(sec) || !isFinite(sensor)) return;
+    if(sec <= 0 || sensor <= 0) return;
+    if(sensor === -999 || Math.abs(sensor) > 1e10) return;
+    data.push({x:sec, y:sensor, p: type ? cSt(sec, type) : null});
+  });
+  if(data.length < 5){ alert('Not enough valid points: ' + data.length); return; }
+  const xs = data.map(d => d.x);
+  const ys = data.map(d => d.y);
+  const models = runModels(xs, ys);
+  models.sort((a,b) => b.r2 - a.r2);
+  const best = models[0];
+  document.getElementById('bestModel').innerHTML =
+    '<div class="metric"><div class="metric-label">Best Model</div><div class="metric-value">' + best.name + '</div></div>' +
+    '<div class="metric"><div class="metric-label">R²</div><div class="metric-value">' + best.r2.toFixed(4) + '</div></div>' +
+    '<div class="metric"><div class="metric-label">Points</div><div class="metric-value">' + data.length + '</div></div>';
+  let tableHtml = '<table><tr><th>Model</th><th>R²</th></tr>';
+  models.forEach((mod, i) => {
+    tableHtml += '<tr class="' + (i===0?'best':'') + '"><td>' + mod.name + '</td><td>' + mod.r2.toFixed(4) + '</td></tr>';
+  });
+  tableHtml += '</table>';
+  document.getElementById('modelTable').innerHTML = tableHtml;
+  renderChart(data, best);
+  document.getElementById('results').style.display = 'block';
 }
 
-// =========================
-// MODELS
-// =========================
-function runModels(x,y){
-let models=[];
-
-// linear
-let lin = linear(x,y);
-models.push({name:"Linear", fn:lin.fn, r2:lin.r2});
-
-// poly2
-let p2 = poly(x,y,2);
-models.push({name:"Poly2", fn:p2.fn, r2:p2.r2});
-
-// exponential
-let exp = exponential(x,y);
-models.push({name:"Exp", fn:exp.fn, r2:exp.r2});
-
-// log
-let logm = logModel(x,y);
-models.push({name:"Log", fn:logm.fn, r2:logm.r2});
-
-// power
-let pow = power(x,y);
-models.push({name:"Power", fn:pow.fn, r2:pow.r2});
-
-return models;
+function runModels(x, y){
+  const models = [];
+  try { const r = linear(x,y);      models.push({name:"Linear",      fn:r.fn, r2:r.r2}); } catch(e){}
+  try { const r = poly(x,y,2);      models.push({name:"Poly deg 2",  fn:r.fn, r2:r.r2}); } catch(e){}
+  try { const r = poly(x,y,3);      models.push({name:"Poly deg 3",  fn:r.fn, r2:r.r2}); } catch(e){}
+  try { const r = exponential(x,y); models.push({name:"Exponential", fn:r.fn, r2:r.r2}); } catch(e){}
+  try { const r = logModel(x,y);    models.push({name:"Logarithmic", fn:r.fn, r2:r.r2}); } catch(e){}
+  try { const r = power(x,y);       models.push({name:"Power",       fn:r.fn, r2:r.r2}); } catch(e){}
+  return models.filter(m => isFinite(m.r2));
 }
 
-// =========================
-// LINEAR
-// =========================
 function linear(x,y){
-let n=x.length;
-let sx=0,sy=0,sxy=0,sx2=0;
-
-for(let i=0;i<n;i++){
-sx+=x[i]; sy+=y[i];
-sxy+=x[i]*y[i];
-sx2+=x[i]*x[i];
+  const n = x.length;
+  let sx=0, sy=0, sxy=0, sx2=0;
+  for(let i=0;i<n;i++){ sx+=x[i]; sy+=y[i]; sxy+=x[i]*y[i]; sx2+=x[i]*x[i]; }
+  const m = (n*sxy - sx*sy) / (n*sx2 - sx*sx);
+  const b = (sy - m*sx) / n;
+  const fn = xi => m*xi + b;
+  return {fn, r2: r2(x,y,fn)};
 }
 
-let m=(n*sxy-sx*sy)/(n*sx2-sx*sx);
-let b=(sy-m*sx)/n;
-
-let fn = x=>m*x+b;
-return {fn,r2:r2(x,y,fn)};
+function poly(x,y,deg){
+  const n = x.length;
+  const X = [], Y = [];
+  for(let i=0;i<n;i++){
+    const row = [];
+    for(let j=0;j<=deg;j++) row.push(Math.pow(x[i], j));
+    X.push(row); Y.push(y[i]);
+  }
+  const XT = transpose(X);
+  const XTX = multiply(XT, X);
+  const XTY = multiplyVec(XT, Y);
+  const coef = solve(XTX, XTY);
+  const fn = xi => { let s=0; for(let j=0;j<coef.length;j++) s += coef[j]*Math.pow(xi,j); return s; };
+  return {fn, r2: r2(x,y,fn)};
 }
 
-// =========================
-// POLY
-// =========================
-function poly(x,y,d){
-let n=x.length;
-let X=[],Y=[];
-
-for(let i=0;i<n;i++){
-let row=[];
-for(let j=0;j<=d;j++) row.push(Math.pow(x[i],j));
-X.push(row);
-Y.push(y[i]);
-}
-
-// normal eq solve
-let XT = mathTranspose(X);
-let XT_X = mathMultiply(XT,X);
-let XT_Y = mathMultiply(XT,Y);
-
-let coef = solve(XT_X, XT_Y);
-
-let fn = x=>{
-let sum=0;
-coef.forEach((c,i)=> sum+=c*Math.pow(x,i));
-return sum;
-};
-
-return {fn, r2:r2(x,y,fn)};
-}
-
-// =========================
-// EXP / LOG / POWER
-// =========================
 function exponential(x,y){
-let X=[],Y=[];
-for(let i=0;i<x.length;i++){
-if(y[i]>0){ X.push(x[i]); Y.push(Math.log(y[i])); }
-}
-let lin = linear(X,Y);
-return {
-fn: x=>Math.exp(lin.fn(x)),
-r2:r2(x,y,x=>Math.exp(lin.fn(x)))
-};
+  const X=[], Y=[];
+  for(let i=0;i<x.length;i++) if(y[i]>0){ X.push(x[i]); Y.push(Math.log(y[i])); }
+  if(X.length < 3) throw "no data";
+  const lin = linear(X,Y);
+  const fn = xi => Math.exp(lin.fn(xi));
+  return {fn, r2: r2(x,y,fn)};
 }
 
 function logModel(x,y){
-let X=[],Y=[];
-for(let i=0;i<x.length;i++){
-if(x[i]>0){ X.push(Math.log(x[i])); Y.push(y[i]); }
-}
-let lin = linear(X,Y);
-return {
-fn: x=>lin.fn(Math.log(x)),
-r2:r2(x,y,x=>lin.fn(Math.log(x)))
-};
+  const X=[], Y=[];
+  for(let i=0;i<x.length;i++) if(x[i]>0){ X.push(Math.log(x[i])); Y.push(y[i]); }
+  if(X.length < 3) throw "no data";
+  const lin = linear(X,Y);
+  const fn = xi => lin.fn(Math.log(xi));
+  return {fn, r2: r2(x,y,fn)};
 }
 
 function power(x,y){
-let X=[],Y=[];
-for(let i=0;i<x.length;i++){
-if(x[i]>0 && y[i]>0){
-X.push(Math.log(x[i]));
-Y.push(Math.log(y[i]));
-}
-}
-let lin = linear(X,Y);
-return {
-fn: x=>Math.exp(lin.fn(Math.log(x))),
-r2:r2(x,y,x=>Math.exp(lin.fn(Math.log(x))))
-};
+  const X=[], Y=[];
+  for(let i=0;i<x.length;i++) if(x[i]>0 && y[i]>0){ X.push(Math.log(x[i])); Y.push(Math.log(y[i])); }
+  if(X.length < 3) throw "no data";
+  const lin = linear(X,Y);
+  const fn = xi => Math.exp(lin.fn(Math.log(xi)));
+  return {fn, r2: r2(x,y,fn)};
 }
 
-// =========================
-// R2
-// =========================
 function r2(x,y,f){
-let mean = y.reduce((a,b)=>a+b,0)/y.length;
-let ssr=0,sst=0;
-for(let i=0;i<x.length;i++){
-let pred=f(x[i]);
-ssr+=(y[i]-pred)**2;
-sst+=(y[i]-mean)**2;
-}
-return 1-ssr/sst;
+  const mean = y.reduce((a,b)=>a+b,0) / y.length;
+  let ssr=0, sst=0;
+  for(let i=0;i<x.length;i++){
+    const pred = f(x[i]);
+    if(!isFinite(pred)) continue;
+    ssr += (y[i]-pred)*(y[i]-pred);
+    sst += (y[i]-mean)*(y[i]-mean);
+  }
+  return sst === 0 ? 0 : 1 - ssr/sst;
 }
 
-// =========================
-// MATRIX HELPERS
-// =========================
-function mathTranspose(A){
-return A[0].map((_,i)=>A.map(r=>r[i]));
+function transpose(A){ return A[0].map((_,i)=>A.map(r=>r[i])); }
+function multiply(A,B){
+  const R=[];
+  for(let i=0;i<A.length;i++){
+    R[i]=[];
+    for(let j=0;j<B[0].length;j++){
+      let s=0;
+      for(let k=0;k<A[0].length;k++) s += A[i][k]*B[k][j];
+      R[i][j]=s;
+    }
+  }
+  return R;
 }
-function mathMultiply(A,B){
-let result=[];
-for(let i=0;i<A.length;i++){
-result[i]=[];
-for(let j=0;j<B[0].length;j++){
-let sum=0;
-for(let k=0;k<A[0].length;k++) sum+=A[i][k]*B[k][j];
-result[i][j]=sum;
-}
-}
-return result;
+function multiplyVec(A,v){
+  const R=[];
+  for(let i=0;i<A.length;i++){
+    let s=0;
+    for(let k=0;k<v.length;k++) s += A[i][k]*v[k];
+    R[i]=s;
+  }
+  return R;
 }
 function solve(A,b){
-let n=A.length;
-for(let i=0;i<n;i++){
-let max=i;
-for(let j=i+1;j<n;j++){
-if(Math.abs(A[j][i])>Math.abs(A[max][i])) max=j;
-}
-[A[i],A[max]]=[A[max],A[i]];
-[b[i],b[max]]=[b[max],b[i]];
-
-for(let j=i+1;j<n;j++){
-let factor=A[j][i]/A[i][i];
-for(let k=i;k<n;k++) A[j][k]-=factor*A[i][k];
-b[j]-=factor*b[i];
-}
-}
-
-let x=new Array(n);
-for(let i=n-1;i>=0;i--){
-x[i]=b[i];
-for(let j=i+1;j<n;j++) x[i]-=A[i][j]*x[j];
-x[i]/=A[i][i];
-}
-return x;
+  const n = A.length;
+  const M = A.map((r,i)=>[...r, b[i]]);
+  for(let i=0;i<n;i++){
+    let max=i;
+    for(let j=i+1;j<n;j++) if(Math.abs(M[j][i])>Math.abs(M[max][i])) max=j;
+    [M[i],M[max]]=[M[max],M[i]];
+    if(Math.abs(M[i][i]) < 1e-12) throw "singular";
+    for(let j=i+1;j<n;j++){
+      const f = M[j][i]/M[i][i];
+      for(let k=i;k<=n;k++) M[j][k] -= f*M[i][k];
+    }
+  }
+  const x = new Array(n);
+  for(let i=n-1;i>=0;i--){
+    let s = M[i][n];
+    for(let j=i+1;j<n;j++) s -= M[i][j]*x[j];
+    x[i] = s / M[i][i];
+  }
+  return x;
 }
 
-// =========================
-// CHART
-// =========================
-function renderChart(data, models){
-let ctx=document.getElementById("chart");
-
-new Chart(ctx,{
-type:"scatter",
-data:{
-datasets:[
-{
-label:"Data",
-data:data,
-backgroundColor:"#00d4ff"
-},
-...models.map(m=>({
-type:"line",
-label:m.name,
-data:data.map(p=>({x:p.x,y:m.fn(p.x)})),
-borderColor:"#0f0",
-fill:false
-}))
-]
-}
-});
+function renderChart(data, best){
+  if(chartInstance) chartInstance.destroy();
+  const ctx = document.getElementById('chart').getContext('2d');
+  const xs = data.map(d=>d.x);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const step = (maxX-minX)/100;
+  const line = [];
+  for(let xi=minX; xi<=maxX; xi+=step){
+    line.push({x: xi, y: best.fn(xi)});
+  }
+  chartInstance = new Chart(ctx, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        { label:'Data', data:data, backgroundColor:'#00d4ff', pointRadius:4 },
+        { label:best.name+' fit', type:'line', data:line, borderColor:'#0f0', borderWidth:2, fill:false, pointRadius:0 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      scales: {
+        x: { title:{display:true,text:'Cup Efflux Time (s)',color:'#aaa'}, ticks:{color:'#aaa'}, grid:{color:'#222'} },
+        y: { title:{display:true,text:'Sensor Viscosity (cP)',color:'#aaa'}, ticks:{color:'#aaa'}, grid:{color:'#222'} }
+      },
+      plugins: { legend: { labels: { color:'#fff' } } }
+    }
+  });
 }
 </script>
 
