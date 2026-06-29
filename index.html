@@ -3,10 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shell Control Correlation Tool v3.0</title>
+<title>Shell Control Correlation Tool v3.1</title>
 
-https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script>if(typeof Papa==='undefined'){document.write('<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"><\/script>');}</script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>if(typeof Chart==='undefined'){document.write('<script src="https://unpkg.com/chart.js@4.4.1/dist/chart.umd.min.js"><\/script>');}</script>
 
 <style>
 body { font-family: system-ui, -apple-system, sans-serif; background:#0a0a0a; color:#fff; padding:20px; margin:0; }
@@ -21,6 +23,7 @@ label { display:block; margin-top:10px; color:#aaa; font-size:14px; }
 .chart-container { height:500px; margin-top:20px; }
 .status { color:#0f0; margin-top:10px; font-size:14px; }
 .error { color:#f55; margin-top:10px; font-size:14px; }
+.warning { color:#fa0; margin-top:10px; font-size:14px; }
 .metric { display:inline-block; background:#1a1a1a; padding:12px 18px; border-radius:8px; margin:5px; border:1px solid #00d4ff; min-width:140px; vertical-align:top; }
 .metric-label { color:#888; font-size:12px; }
 .metric-value { color:#00d4ff; font-size:22px; font-weight:600; }
@@ -30,11 +33,14 @@ label { display:block; margin-top:10px; color:#aaa; font-size:14px; }
 .slider-row input[type="range"] { flex:1; accent-color:#00d4ff; height:6px; }
 .slider-value { color:#00d4ff; font-weight:600; min-width:120px; text-align:right; font-size:16px; }
 hr { border:none; border-top:1px solid #222; margin:25px 0; }
+#libCheck { padding:10px; border-radius:8px; margin-bottom:15px; }
 </style>
 </head>
 <body>
 <div class="container">
-<h1 style="color:#00d4ff;">Shell Control Correlation Tool v3.0</h1>
+<h1 style="color:#00d4ff;">Shell Control Correlation Tool v3.1</h1>
+
+<div id="libCheck"></div>
 
 <div class="card">
 <div class="section-title">1. Upload CSV File</div>
@@ -45,18 +51,9 @@ hr { border:none; border-top:1px solid #222; margin:25px 0; }
 <div id="controls" class="card" style="display:none;">
 <div class="section-title">2. Column Mapping & Cup Type</div>
 <div class="row">
-<div class="col">
-<label>Date/Time Column:</label>
-<select id="dateCol"></select>
-</div>
-<div class="col">
-<label>Manual Cup Seconds Column (X):</label>
-<select id="manualCol"></select>
-</div>
-<div class="col">
-<label>Sensor cP Column (Y):</label>
-<select id="sensorCol"></select>
-</div>
+<div class="col"><label>Date/Time Column:</label><select id="dateCol"></select></div>
+<div class="col"><label>Manual Cup Seconds (X):</label><select id="manualCol"></select></div>
+<div class="col"><label>Sensor cP (Y):</label><select id="sensorCol"></select></div>
 <div class="col">
 <label>Cup Type:</label>
 <select id="cupType">
@@ -68,63 +65,62 @@ hr { border:none; border-top:1px solid #222; margin:25px 0; }
 </select>
 </div>
 </div>
-
 <hr>
 <div class="section-title" style="font-size:16px;">Spec Limits on Manual Cup Seconds</div>
 <div class="row">
-<div class="col">
-<label>LSL (Lower Spec Limit):</label>
-<input type="number" id="lsl" step="any" placeholder="e.g., 25">
+<div class="col"><label>LSL:</label><input type="number" id="lsl" step="any" placeholder="e.g., 25"></div>
+<div class="col"><label>USL:</label><input type="number" id="usl" step="any" placeholder="e.g., 45"></div>
 </div>
-<div class="col">
-<label>USL (Upper Spec Limit):</label>
-<input type="number" id="usl" step="any" placeholder="e.g., 45">
-</div>
-</div>
-
 <button onclick="processData()">Process Data</button>
 </div>
 
 <div id="results" class="card" style="display:none;">
 <div class="section-title">3. Pairing Summary</div>
 <div id="pairingMetrics"></div>
-
 <hr>
 <div class="section-title">4. Difference Filter (Median-Centered)</div>
-<p style="color:#aaa; font-size:14px; margin:5px 0;">
-Slide left to <strong>tighten</strong> the window around the median difference (sensor − calculated). Only points whose difference is within ± the tolerance shown will be included in the linear regression. R² updates live.
-</p>
+<p style="color:#aaa; font-size:14px; margin:5px 0;">Slide left to <b>tighten</b> the window around the median difference (sensor − calculated). R² updates live.</p>
 <div class="slider-row">
 <span style="color:#aaa;">Tolerance:</span>
 <input type="range" id="diffSlider" min="0" max="100" step="1" value="100">
 <span class="slider-value" id="sliderValue">--</span>
 </div>
-
 <hr>
 <div class="section-title">5. Linear Regression Results</div>
 <div id="regressionMetrics"></div>
-
-<div class="chart-container">
-<canvas id="chart"></canvas>
-</div>
+<div class="chart-container"><canvas id="chart"></canvas></div>
 </div>
 
 </div>
 
 <script>
-// =========================
-// STATE
-// =========================
+// ---------- LIBRARY CHECK ----------
+window.addEventListener('load', function(){
+  const lc = document.getElementById('libCheck');
+  const okPapa = typeof Papa !== 'undefined';
+  const okChart = typeof Chart !== 'undefined';
+  if (okPapa && okChart) {
+    lc.className = 'status';
+    lc.innerHTML = '✓ Libraries loaded: PapaParse '+Papa.RECORD_SEP?Papa.RECORD_SEP:'OK'+' | Chart.js OK';
+    lc.style.display = 'none';
+  } else {
+    lc.className = 'error';
+    lc.innerHTML = '✗ Library load failure: ' +
+      (okPapa?'':'PapaParse missing. ') +
+      (okChart?'':'Chart.js missing. ') +
+      'Check your network / CDN access.';
+  }
+});
+
+// ---------- STATE ----------
 let rawRows = [];
 let headers = [];
-let pairedData = [];      // {cupSec, sensorCP, calcCst, difference, interpolated}
+let pairedData = [];
 let medianDifference = 0;
 let maxAbsDeviation = 0;
 let chartInstance = null;
 
-// =========================
-// CUP FORMULAS
-// =========================
+// ---------- CUP FORMULAS ----------
 function calculateCst(sec, type) {
   if (!sec || sec <= 0) return null;
   switch (type) {
@@ -136,9 +132,7 @@ function calculateCst(sec, type) {
   return null;
 }
 
-// =========================
-// VALIDITY + INTERPOLATION
-// =========================
+// ---------- VALIDITY + INTERPOLATION ----------
 function isValidSensor(v) {
   return isFinite(v) && v > 0 && v !== -999 && Math.abs(v) < 1e10;
 }
@@ -146,265 +140,220 @@ function isValidSensor(v) {
 function getInterpolatedSensor(sensorArr, idx) {
   const current = sensorArr[idx];
   if (isValidSensor(current)) return { value: current, interpolated: false };
-
-  let beforeVal = null;
-  for (let i = idx - 1; i >= 0; i--) {
-    if (isValidSensor(sensorArr[i])) { beforeVal = sensorArr[i]; break; }
-  }
-  let afterVal = null;
-  for (let i = idx + 1; i < sensorArr.length; i++) {
-    if (isValidSensor(sensorArr[i])) { afterVal = sensorArr[i]; break; }
-  }
-
-  if (beforeVal !== null && afterVal !== null) return { value: (beforeVal + afterVal) / 2, interpolated: true };
+  let beforeVal = null, afterVal = null;
+  for (let i = idx - 1; i >= 0; i--) if (isValidSensor(sensorArr[i])) { beforeVal = sensorArr[i]; break; }
+  for (let i = idx + 1; i < sensorArr.length; i++) if (isValidSensor(sensorArr[i])) { afterVal = sensorArr[i]; break; }
+  if (beforeVal !== null && afterVal !== null) return { value:(beforeVal+afterVal)/2, interpolated:true };
   if (beforeVal !== null) return { value: beforeVal, interpolated: true };
-  if (afterVal !== null) return { value: afterVal, interpolated: true };
+  if (afterVal !== null)  return { value: afterVal,  interpolated: true };
   return { value: null, interpolated: false };
 }
 
-// =========================
-// FILE LOAD
-// =========================
+// ---------- FILE LOAD ----------
 document.getElementById('fileInput').addEventListener('change', function(e) {
   const file = e.target.files[0];
   if (!file) return;
-  document.getElementById('loadStatus').className = 'status';
-  document.getElementById('loadStatus').textContent = 'Reading ' + file.name + ' ...';
 
-  Papa.parse(file, {
-    skipEmptyLines: false,
-    complete: function(res) {
-      try {
-        const r = res.data;
-        let idx = -1;
-        for (let i = 12; i < Math.min(r.length, 20); i++) {
-          if (r[i] && r[i].some(x => String(x || '').toLowerCase().includes("date"))) { idx = i; break; }
+  const ls = document.getElementById('loadStatus');
+  ls.className = 'status';
+
+  if (typeof Papa === 'undefined') {
+    ls.className = 'error';
+    ls.textContent = '✗ PapaParse not loaded. Check internet / CDN access.';
+    return;
+  }
+
+  ls.textContent = 'Reading ' + file.name + ' (' + Math.round(file.size/1024) + ' KB) ...';
+  console.log('[upload] Starting parse of', file.name, 'size=', file.size);
+
+  // Safety timeout — if Papa never calls back in 30s, surface an error
+  const timeout = setTimeout(function(){
+    ls.className = 'error';
+    ls.textContent = '✗ Timed out reading file after 30s. Try a smaller file or check console.';
+    console.error('[upload] Timeout after 30s');
+  }, 30000);
+
+  try {
+    Papa.parse(file, {
+      skipEmptyLines: false,
+      worker: false,
+      complete: function(res) {
+        clearTimeout(timeout);
+        console.log('[upload] Parse complete. rows=', res.data.length, 'errors=', res.errors.length);
+        try {
+          const r = res.data;
+          if (!r || r.length === 0) throw new Error('CSV appears empty.');
+          let idx = -1;
+          for (let i = 12; i < Math.min(r.length, 25); i++) {
+            if (r[i] && r[i].some(x => String(x || '').toLowerCase().includes("date"))) { idx = i; break; }
+          }
+          if (idx === -1) {
+            // Fallback: try to find ANY row with multiple non-empty text cells
+            for (let i = 0; i < Math.min(r.length, 30); i++) {
+              if (r[i] && r[i].filter(x => String(x||'').trim().length > 0).length >= 3) { idx = i; break; }
+            }
+          }
+          if (idx === -1) throw new Error('Could not detect header row. Expected headers around row 14-15.');
+
+          headers = r[idx].map(h => String(h || '').trim());
+          rawRows = r.slice(idx + 1);
+
+          ["dateCol", "manualCol", "sensorCol"].forEach(id => {
+            const sel = document.getElementById(id);
+            sel.innerHTML = "";
+            headers.forEach((h, i) => { if (h) sel.add(new Option(h, i)); });
+          });
+          headers.forEach((h, i) => {
+            const hl = h.toLowerCase();
+            if (hl.includes('date') && hl.includes('time')) document.getElementById('dateCol').value = i;
+            if (hl.includes('zahn') || hl.includes('efflux') || hl.includes('cup')) document.getElementById('manualCol').value = i;
+            if (hl.includes('viscosity') || (hl.includes('cp') && !hl.includes('cup'))) document.getElementById('sensorCol').value = i;
+          });
+
+          document.getElementById('controls').style.display = 'block';
+          ls.textContent = '✓ Loaded ' + rawRows.length + ' rows | ' + headers.length + ' columns | Headers on row ' + (idx + 1);
+        } catch (err) {
+          ls.className = 'error';
+          ls.textContent = '✗ Parse error: ' + err.message;
+          console.error('[upload] inner error', err);
         }
-        if (idx === -1) idx = 14;
-        headers = r[idx].map(h => String(h || '').trim());
-        rawRows = r.slice(idx + 1);
-
-        ["dateCol", "manualCol", "sensorCol"].forEach(id => {
-          const sel = document.getElementById(id);
-          sel.innerHTML = "";
-          headers.forEach((h, i) => { if (h) sel.add(new Option(h, i)); });
-        });
-        headers.forEach((h, i) => {
-          const hl = h.toLowerCase();
-          if (hl.includes('date') && hl.includes('time')) document.getElementById('dateCol').value = i;
-          if (hl.includes('zahn') || hl.includes('efflux') || hl.includes('cup')) document.getElementById('manualCol').value = i;
-          if (hl.includes('viscosity') || (hl.includes('cp') && !hl.includes('cup'))) document.getElementById('sensorCol').value = i;
-        });
-
-        document.getElementById('controls').style.display = 'block';
-        document.getElementById('loadStatus').textContent =
-          '✓ Loaded ' + rawRows.length + ' rows | ' + headers.length + ' columns | Headers on row ' + (idx + 1);
-      } catch (err) {
-        document.getElementById('loadStatus').className = 'error';
-        document.getElementById('loadStatus').textContent = '✗ Error: ' + err.message;
-        console.error(err);
+      },
+      error: function(err) {
+        clearTimeout(timeout);
+        ls.className = 'error';
+        ls.textContent = '✗ Papa.parse error: ' + (err.message || err);
+        console.error('[upload] Papa error', err);
       }
-    }
-  });
+    });
+  } catch (err) {
+    clearTimeout(timeout);
+    ls.className = 'error';
+    ls.textContent = '✗ Could not start parser: ' + err.message;
+    console.error('[upload] outer error', err);
+  }
 });
 
-// =========================
-// MAIN PROCESS
-// =========================
+// ---------- PROCESS ----------
 function processData() {
   const m = parseInt(document.getElementById('manualCol').value);
   const s = parseInt(document.getElementById('sensorCol').value);
   const cupType = document.getElementById('cupType').value;
   const lsl = parseFloat(document.getElementById('lsl').value);
   const usl = parseFloat(document.getElementById('usl').value);
-
   if (!cupType) { alert('Please select a Cup Type.'); return; }
 
-  // Build full sensor array (for interpolation lookups)
   const sensorArr = rawRows.map(r => r ? parseFloat(r[s]) : NaN);
-
   pairedData = [];
-  let totalManualPoints = 0;
-  let interpolatedCount = 0;
+  let totalManual = 0, interpCount = 0;
 
   rawRows.forEach((r, i) => {
     if (!r) return;
     const cupSec = parseFloat(r[m]);
     if (!isFinite(cupSec) || cupSec <= 0) return;
-    totalManualPoints++;
-
+    totalManual++;
     const interp = getInterpolatedSensor(sensorArr, i);
     if (interp.value === null) return;
-
     const calcCst = calculateCst(cupSec, cupType);
     if (calcCst === null || !isFinite(calcCst)) return;
-
     const sensorCP = interp.value;
-    const difference = sensorCP - calcCst; // sensor − calculated
-
-    if (interp.interpolated) interpolatedCount++;
-
+    const difference = sensorCP - calcCst;
+    if (interp.interpolated) interpCount++;
     pairedData.push({ cupSec, sensorCP, calcCst, difference, interpolated: interp.interpolated });
   });
 
-  if (pairedData.length < 3) {
-    alert('Not enough valid paired points (' + pairedData.length + '). Check your column mapping.');
-    return;
-  }
+  if (pairedData.length < 3) { alert('Not enough valid pairs (' + pairedData.length + ').'); return; }
 
-  // Median difference
-  const diffs = pairedData.map(p => p.difference).slice().sort((a, b) => a - b);
+  const diffs = pairedData.map(p => p.difference).slice().sort((a,b) => a-b);
   const mid = Math.floor(diffs.length / 2);
-  medianDifference = diffs.length % 2 === 0 ? (diffs[mid - 1] + diffs[mid]) / 2 : diffs[mid];
+  medianDifference = diffs.length % 2 === 0 ? (diffs[mid-1]+diffs[mid])/2 : diffs[mid];
 
-  // Max abs deviation from median
   maxAbsDeviation = 0;
-  pairedData.forEach(p => {
-    const d = Math.abs(p.difference - medianDifference);
-    if (d > maxAbsDeviation) maxAbsDeviation = d;
-  });
+  pairedData.forEach(p => { const d = Math.abs(p.difference - medianDifference); if (d > maxAbsDeviation) maxAbsDeviation = d; });
   if (maxAbsDeviation === 0) maxAbsDeviation = 1;
 
-  // % in spec on cup seconds
   let inSpecPct = null;
   if (isFinite(lsl) && isFinite(usl) && usl > lsl) {
-    const inSpec = pairedData.filter(p => p.cupSec >= lsl && p.cupSec <= usl).length;
-    inSpecPct = (inSpec / pairedData.length) * 100;
+    inSpecPct = (pairedData.filter(p => p.cupSec >= lsl && p.cupSec <= usl).length / pairedData.length) * 100;
   }
 
-  // Render pairing summary
-  const pm = document.getElementById('pairingMetrics');
-  pm.innerHTML =
-    '<div class="metric"><div class="metric-label">Total Manual Readings</div><div class="metric-value">' + totalManualPoints + '</div></div>' +
-    '<div class="metric"><div class="metric-label">Valid Paired Sets</div><div class="metric-value">' + pairedData.length + ' / ' + totalManualPoints + '</div></div>' +
-    '<div class="metric"><div class="metric-label">Sensor Interpolated</div><div class="metric-value">' + interpolatedCount + '</div></div>' +
-    '<div class="metric"><div class="metric-label">Median Difference</div><div class="metric-value">' + medianDifference.toFixed(2) + '</div></div>' +
-    (inSpecPct !== null
-      ? '<div class="metric"><div class="metric-label">% In Spec (Cup s)</div><div class="metric-value">' + inSpecPct.toFixed(1) + '%</div></div>'
+  document.getElementById('pairingMetrics').innerHTML =
+    '<div class="metric"><div class="metric-label">Total Manual Readings</div><div class="metric-value">'+totalManual+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Valid Paired Sets</div><div class="metric-value">'+pairedData.length+' / '+totalManual+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Sensor Interpolated</div><div class="metric-value">'+interpCount+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Median Difference</div><div class="metric-value">'+medianDifference.toFixed(2)+'</div></div>'+
+    (inSpecPct!==null
+      ? '<div class="metric"><div class="metric-label">% In Spec (Cup s)</div><div class="metric-value">'+inSpecPct.toFixed(1)+'%</div></div>'
       : '<div class="metric"><div class="metric-label">% In Spec</div><div class="metric-value" style="font-size:14px;">Enter LSL & USL</div></div>');
 
-  // Configure slider
   const slider = document.getElementById('diffSlider');
-  slider.min = 0;
-  slider.max = maxAbsDeviation;
-  slider.step = maxAbsDeviation / 200;
-  slider.value = maxAbsDeviation;
+  slider.min = 0; slider.max = maxAbsDeviation; slider.step = maxAbsDeviation/200; slider.value = maxAbsDeviation;
   slider.oninput = updateFromSlider;
 
   document.getElementById('results').style.display = 'block';
   updateFromSlider();
 }
 
-// =========================
-// SLIDER -> RECOMPUTE
-// =========================
 function updateFromSlider() {
   const tolerance = parseFloat(document.getElementById('diffSlider').value);
   document.getElementById('sliderValue').textContent = '± ' + tolerance.toFixed(2);
-
   const active = pairedData.filter(p => Math.abs(p.difference - medianDifference) <= tolerance);
   const excluded = pairedData.filter(p => Math.abs(p.difference - medianDifference) > tolerance);
 
   if (active.length < 2) {
     document.getElementById('regressionMetrics').innerHTML =
-      '<div class="error">Not enough points in window (' + active.length + '). Widen the tolerance.</div>';
-    renderChart(active, excluded, null);
-    return;
+      '<div class="error">Not enough points in window ('+active.length+'). Widen the tolerance.</div>';
+    renderChart(active, excluded, null); return;
   }
-
-  const xs = active.map(d => d.cupSec);
-  const ys = active.map(d => d.sensorCP);
+  const xs = active.map(d=>d.cupSec), ys = active.map(d=>d.sensorCP);
   const lin = linearRegression(xs, ys);
   const r2 = computeR2(xs, ys, lin.fn);
 
   document.getElementById('regressionMetrics').innerHTML =
-    '<div class="metric"><div class="metric-label">Points in Window</div><div class="metric-value">' + active.length + ' / ' + pairedData.length + '</div></div>' +
-    '<div class="metric"><div class="metric-label">R²</div><div class="metric-value">' + r2.toFixed(4) + '</div></div>' +
-    '<div class="metric"><div class="metric-label">Slope</div><div class="metric-value">' + lin.m.toFixed(3) + '</div></div>' +
-    '<div class="metric"><div class="metric-label">Intercept</div><div class="metric-value">' + lin.b.toFixed(2) + '</div></div>' +
-    '<div class="metric"><div class="metric-label">Equation</div><div class="metric-value" style="font-size:14px;">y = ' + lin.m.toFixed(3) + 'x + ' + lin.b.toFixed(2) + '</div></div>';
+    '<div class="metric"><div class="metric-label">Points in Window</div><div class="metric-value">'+active.length+' / '+pairedData.length+'</div></div>'+
+    '<div class="metric"><div class="metric-label">R²</div><div class="metric-value">'+r2.toFixed(4)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Slope</div><div class="metric-value">'+lin.m.toFixed(3)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Intercept</div><div class="metric-value">'+lin.b.toFixed(2)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Equation</div><div class="metric-value" style="font-size:14px;">y = '+lin.m.toFixed(3)+'x + '+lin.b.toFixed(2)+'</div></div>';
 
   renderChart(active, excluded, lin);
 }
 
-// =========================
-// LINEAR + R²
-// =========================
-function linearRegression(x, y) {
-  const n = x.length;
-  let sx = 0, sy = 0, sxy = 0, sx2 = 0;
-  for (let i = 0; i < n; i++) {
-    sx += x[i]; sy += y[i]; sxy += x[i] * y[i]; sx2 += x[i] * x[i];
-  }
-  const denom = (n * sx2 - sx * sx);
-  const m = denom === 0 ? 0 : (n * sxy - sx * sy) / denom;
-  const b = (sy - m * sx) / n;
-  return { m, b, fn: xi => m * xi + b };
+function linearRegression(x,y){
+  const n=x.length; let sx=0,sy=0,sxy=0,sx2=0;
+  for(let i=0;i<n;i++){ sx+=x[i]; sy+=y[i]; sxy+=x[i]*y[i]; sx2+=x[i]*x[i]; }
+  const denom=(n*sx2-sx*sx);
+  const m=denom===0?0:(n*sxy-sx*sy)/denom;
+  const b=(sy-m*sx)/n;
+  return {m,b,fn:xi=>m*xi+b};
 }
 
-function computeR2(x, y, fn) {
-  const mean = y.reduce((a, b) => a + b, 0) / y.length;
-  let ssr = 0, sst = 0;
-  for (let i = 0; i < x.length; i++) {
-    const pred = fn(x[i]);
-    ssr += (y[i] - pred) * (y[i] - pred);
-    sst += (y[i] - mean) * (y[i] - mean);
-  }
-  return sst === 0 ? 0 : 1 - ssr / sst;
+function computeR2(x,y,fn){
+  const mean=y.reduce((a,b)=>a+b,0)/y.length; let ssr=0,sst=0;
+  for(let i=0;i<x.length;i++){ const p=fn(x[i]); ssr+=(y[i]-p)*(y[i]-p); sst+=(y[i]-mean)*(y[i]-mean); }
+  return sst===0?0:1-ssr/sst;
 }
 
-// =========================
-// CHART
-// =========================
-function renderChart(active, excluded, lin) {
+function renderChart(active, excluded, lin){
+  if (typeof Chart === 'undefined') { console.error('Chart.js missing'); return; }
   if (chartInstance) chartInstance.destroy();
   const ctx = document.getElementById('chart').getContext('2d');
-
   const datasets = [
-    {
-      label: 'Excluded by filter',
-      data: excluded.map(d => ({ x: d.cupSec, y: d.sensorCP })),
-      backgroundColor: 'rgba(150,150,150,0.35)',
-      pointRadius: 3
-    },
-    {
-      label: 'In window',
-      data: active.map(d => ({ x: d.cupSec, y: d.sensorCP })),
-      backgroundColor: '#00d4ff',
-      pointRadius: 5
-    }
+    { label:'Excluded', data:excluded.map(d=>({x:d.cupSec,y:d.sensorCP})), backgroundColor:'rgba(150,150,150,0.35)', pointRadius:3 },
+    { label:'In window', data:active.map(d=>({x:d.cupSec,y:d.sensorCP})), backgroundColor:'#00d4ff', pointRadius:5 }
   ];
-
-  if (lin && active.length >= 2) {
-    const xs = active.map(d => d.cupSec);
-    const minX = Math.min.apply(null, xs);
-    const maxX = Math.max.apply(null, xs);
-    datasets.push({
-      label: 'Linear fit',
-      type: 'line',
-      data: [
-        { x: minX, y: lin.fn(minX) },
-        { x: maxX, y: lin.fn(maxX) }
-      ],
-      borderColor: '#00ff66',
-      borderWidth: 2,
-      fill: false,
-      pointRadius: 0
-    });
+  if (lin && active.length>=2) {
+    const xs=active.map(d=>d.cupSec), minX=Math.min.apply(null,xs), maxX=Math.max.apply(null,xs);
+    datasets.push({ label:'Linear fit', type:'line', data:[{x:minX,y:lin.fn(minX)},{x:maxX,y:lin.fn(maxX)}], borderColor:'#00ff66', borderWidth:2, fill:false, pointRadius:0 });
   }
-
   chartInstance = new Chart(ctx, {
-    type: 'scatter',
-    data: { datasets },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      animation: false,
-      scales: {
-        x: { title: { display: true, text: 'Manual Cup Efflux Time (s)', color: '#aaa' }, ticks: { color: '#aaa' }, grid: { color: '#222' } },
-        y: { title: { display: true, text: 'Sensor Viscosity (cP)', color: '#aaa' }, ticks: { color: '#aaa' }, grid: { color: '#222' } }
+    type:'scatter', data:{datasets},
+    options:{
+      responsive:true, maintainAspectRatio:false, animation:false,
+      scales:{
+        x:{title:{display:true,text:'Manual Cup Efflux Time (s)',color:'#aaa'},ticks:{color:'#aaa'},grid:{color:'#222'}},
+        y:{title:{display:true,text:'Sensor Viscosity (cP)',color:'#aaa'},ticks:{color:'#aaa'},grid:{color:'#222'}}
       },
-      plugins: { legend: { labels: { color: '#fff' } } }
+      plugins:{legend:{labels:{color:'#fff'}}}
     }
   });
 }
