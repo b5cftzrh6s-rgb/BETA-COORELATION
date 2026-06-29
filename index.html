@@ -1,797 +1,348 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BETA-COORELATION • Investment Casting Slurry Tool</title>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <style>
-        body { font-family: system-ui, -apple-system, sans-serif; background: #0a0a0a; color: #fff; margin: 0; padding: 20px; }
-        .container { max-width: 1400px; margin: 0 auto; }
-        .nav { display: flex; gap: 8px; margin-bottom: 20px; border-bottom: 2px solid #222; padding-bottom: 12px; }
-        .nav button { background: #1a1a1a; color: #fff; border: 1px solid #333; padding: 10px 24px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .nav button.active { background: #00d4ff; color: #000; border-color: #00d4ff; }
-        .card { background: #111; border-radius: 16px; padding: 20px; margin-bottom: 20px; border: 1px solid #222; }
-        .section-title { color: #00d4ff; font-weight: 700; margin-bottom: 12px; font-size: 1.1rem; }
-        button { background: #00d4ff; color: #000; border: none; padding: 12px 24px; border-radius: 9999px; font-weight: 700; cursor: pointer; }
-        button.secondary { background: #333; color: #fff; }
-        select, input { width: 100%; padding: 10px; background: #1a1a1a; color: #fff; border: 1px solid #333; border-radius: 8px; }
-        table { width: 100%; border-collapse: collapse; background: #1a1a1a; font-size: 0.9rem; }
-        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #333; }
-        th { background: #222; font-weight: 600; }
-        .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
-        .metric { background: #1a1a1a; padding: 16px; border-radius: 12px; text-align: center; }
-        .metric-value { font-size: 22px; font-weight: 700; color: #00d4ff; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .good { color: #22c55e; font-weight: 700; }
-        .warning { color: #f59e0b; font-weight: 700; }
-        .bad { color: #ef4444; font-weight: 700; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Shell Control Correlation Tool v2.0</title>
+
+https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<style>
+body { font-family: system-ui; background:#0a0a0a; color:#fff; padding:20px; }
+.container { max-width:1400px; margin:auto; }
+.card { background:#111; padding:20px; border-radius:16px; margin-bottom:20px; border:1px solid #222; }
+.section-title { color:#00d4ff; font-weight:600; margin-bottom:10px; }
+button { background:#00d4ff; color:#000; padding:10px 20px; border-radius:999px; border:none; cursor:pointer; }
+select,input { width:100%; padding:8px; background:#1a1a1a; color:#fff; border:1px solid #333; border-radius:8px; }
+.chart { height:350px; }
+</style>
 </head>
+
 <body>
-    <div class="container">
-        <h1 style="margin-bottom: 8px;">Investment Casting Slurry Tool</h1>
-        <p style="color: #888; margin-bottom: 20px;">BETA-COORELATION • Correlation + Advanced Weekly Regime Analysis</p>
-
-        <!-- Navigation -->
-        <div class="nav">
-            <button onclick="switchTab(1)" id="tab1-btn" class="active">1. Correlation Tool</button>
-            <button onclick="switchTab(2)" id="tab2-btn">2. Advanced Weekly Analysis</button>
-        </div>
-
-        <!-- ==================== TAB 1: CORRELATION TOOL (UNCHANGED) ==================== -->
-        <div id="tab1" class="tab-content active">
-            <div class="card">
-                <div class="section-title">Upload Raw Data (Headers in Row 15)</div>
-                <input type="file" id="fileInput1" accept=".csv">
-            </div>
-
-            <div id="selectors1" class="card" style="display:none;">
-                <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px;">
-                    <div><label>Date/Time Column</label><select id="dateCol"></select></div>
-                    <div><label>Cup Seconds Column</label><select id="manualCol"></select></div>
-                    <div><label>Sensor Value Column</label><select id="sensorCol"></select></div>
-                </div>
-                <div style="margin-top:16px;">
-                    <label>Cup Type <span style="color:red;">*</span></label>
-                    <select id="cupType">
-                        <option value="">-- Select Cup Type --</option>
-                        <option value="EZ-Zahn4">EZ-Zahn #4</option>
-                        <option value="EZ-Zahn5">EZ-Zahn #5</option>
-                        <option value="ISO6">ISO #6</option>
-                        <option value="ISO8">ISO #8</option>
-                        <option value="ISO6_MINI">ISO #6 Mini</option>
-                        <option value="ISO8_MINI">ISO #8 Mini</option>
-                    </select>
-                </div>
-                <button onclick="processData1()" style="width:100%; margin-top:16px;">Process Data</button>
-            </div>
-
-            <div id="results1" style="display:none;">
-                <!-- Baseline Stats -->
-                <div class="card">
-                    <div class="section-title">Baseline Statistics (Min / Max / Avg / Std Dev)</div>
-                    <div class="metrics" id="baselineMetrics1"></div>
-                </div>
-
-                <!-- Shift Definitions -->
-                <div class="card">
-                    <details>
-                        <summary class="section-title" style="cursor:pointer;">Define Shifts (Optional)</summary>
-                        <div style="margin-top:12px;">
-                            <div id="shiftInputs"></div>
-                            <button onclick="addShiftRow()" class="secondary" style="margin-top:8px;">+ Add Shift</button>
-                            <button onclick="applyShifts1()" style="margin-top:8px; margin-left:8px;">Apply Shifts & Show Per-Shift Analysis</button>
-                        </div>
-                    </details>
-                    <div id="shiftResults1" style="margin-top:16px;"></div>
-                </div>
-
-                <!-- Manual Limits -->
-                <div class="card">
-                    <div class="section-title">Manual Spec Limits</div>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-                        <div>
-                            <label>Cup Seconds LSL</label><input type="number" id="manualLSL">
-                            <label style="margin-top:8px;">Cup Seconds USL</label><input type="number" id="manualUSL">
-                        </div>
-                        <div>
-                            <label>Sensor LSL</label><input type="number" id="sensorLSL">
-                            <label style="margin-top:8px;">Sensor USL</label><input type="number" id="sensorUSL">
-                        </div>
-                    </div>
-                    <div style="margin-top:12px;">
-                        <button onclick="applyLimits1()">Apply Limits</button>
-                        <button onclick="resetLimits1()" class="secondary" style="margin-left:8px;">Reset</button>
-                    </div>
-                    <div id="specResults1" style="margin-top:16px; font-size:0.95rem;"></div>
-                </div>
-
-                <!-- STD Filter + Regression Formulas -->
-                <div class="card">
-                    <div class="section-title">STD Filter + Linear Regression Formulas (k values)</div>
-                    <button onclick="runStrongest1()" style="width:100%;">Calculate Best R² + Regression Formulas for k = 0.5 / 1.0 / 1.5 / 2.0</button>
-                    <div id="strongestResults1" style="margin-top:16px;"></div>
-                </div>
-
-                <!-- Data Table -->
-                <div class="card">
-                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                        <div class="section-title" style="margin:0;">Data Table</div>
-                        <button onclick="downloadCSV1()" class="secondary">Download CSV</button>
-                    </div>
-                    <div style="overflow-x:auto; max-height:400px;">
-                        <table id="resultTable1"><thead></thead><tbody></tbody></table>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ==================== TAB 2: ADVANCED WEEKLY ANALYSIS (UPDATED) ==================== -->
-        <div id="tab2" class="tab-content">
-            <div class="card">
-                <div class="section-title">Upload Raw Data File (Same file as Tab 1)</div>
-                <input type="file" id="fileInput2" accept=".csv">
-            </div>
-
-            <div id="results2" style="display:none;">
-                <!-- Global Stats -->
-                <div class="metrics" style="margin-bottom:20px;">
-                    <div class="metric"><div class="metric-value" id="globalMeanDiff">—</div><div>Global Mean Difference</div></div>
-                    <div class="metric"><div class="metric-value" id="globalStdDiff">—</div><div>Global Std Dev of Difference</div></div>
-                    <div class="metric"><div class="metric-value good" id="normalWeeks">—</div><div>Weeks within ±1σ (Green)</div></div>
-                    <div class="metric"><div class="metric-value warning" id="driftWeeks">—</div><div>Weeks 1-2σ (Yellow)</div></div>
-                    <div class="metric"><div class="metric-value bad" id="badWeeks">—</div><div>Weeks >2σ (Red)</div></div>
-                </div>
-
-                <div class="card">
-                    <div class="section-title">Week-by-Week Mean Difference (Colored by deviation from Global Mean)</div>
-                    <canvas id="barChart" height="120"></canvas>
-                </div>
-
-                <div class="card">
-                    <div class="section-title">Weekly Analysis Table</div>
-                    <div style="overflow-x:auto;">
-                        <table id="weeklyTable"><thead></thead><tbody></tbody></table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        // ==================== TAB 1: CORRELATION TOOL (UNCHANGED) ====================
-        let cleanedData1 = [];
-        let currentData1 = [];
-        let headers1 = [];
-        let originalRows1 = [];
-        let shiftDefinitions = [];
-
-        document.getElementById('fileInput1').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            Papa.parse(file, {
-                header: false,
-                skipEmptyLines: false,
-                complete: function(results) {
-                    const rows = results.data;
-                    if (rows.length < 16) {
-                        alert("File must have headers in row 15.");
-                        return;
-                    }
-                    headers1 = rows[14].map(h => String(h || "").trim());
-                    originalRows1 = rows.slice(15).filter(r => r.length > 2);
-                    populateSelectors1();
-                    document.getElementById('selectors1').style.display = 'block';
-                    initShiftInputs();
-                }
-            });
-        });
-
-        function populateSelectors1() {
-            const selects = ['dateCol', 'manualCol', 'sensorCol'];
-            selects.forEach(id => {
-                const sel = document.getElementById(id);
-                sel.innerHTML = '';
-                headers1.forEach((h, i) => {
-                    const opt = new Option(h || `Col ${i+1}`, i);
-                    sel.add(opt);
-                });
-            });
-            if (headers1.length >= 3) {
-                document.getElementById('dateCol').value = 0;
-                document.getElementById('manualCol').value = 1;
-                document.getElementById('sensorCol').value = 2;
-            }
-        }
-
-        function calculateCSt1(seconds, cupType) {
-            if (!seconds || isNaN(seconds)) return null;
-            switch(cupType) {
-                case "EZ-Zahn4": return 13.26 * seconds - (673 / seconds);
-                case "EZ-Zahn5": return 23.56 * seconds - (744 / seconds);
-                case "ISO6": return 6.9 * seconds - (570 / seconds);
-                case "ISO8": return 21.78 * seconds - (306 / seconds);
-                case "ISO6_MINI": return 13.8 * seconds - (285 / seconds);
-                case "ISO8_MINI": return 43.56 * seconds - (153 / seconds);
-                default: return null;
-            }
-        }
-
-        function processData1() {
-            const dateIdx = parseInt(document.getElementById('dateCol').value);
-            const manualIdx = parseInt(document.getElementById('manualCol').value);
-            const sensorIdx = parseInt(document.getElementById('sensorCol').value);
-            const cupType = document.getElementById('cupType').value;
-
-            if (!cupType) return alert("Please select a Cup Type.");
-            if (!originalRows1.length) return alert("No data loaded.");
-
-            cleanedData1 = [];
-
-            for (let i = 0; i < originalRows1.length; i++) {
-                const row = originalRows1[i];
-                const dateTime = row[dateIdx];
-                const manualSec = parseFloat(row[manualIdx]);
-                let sensorVal = parseFloat(row[sensorIdx]);
-
-                if (isNaN(manualSec)) continue;
-
-                if (isNaN(sensorVal)) {
-                    let prev = null, next = null;
-                    for (let j = i-1; j>=0; j--) { const v = parseFloat(originalRows1[j][sensorIdx]); if (!isNaN(v)) { prev = v; break; } }
-                    for (let j = i+1; j<originalRows1.length; j++) { const v = parseFloat(originalRows1[j][sensorIdx]); if (!isNaN(v)) { next = v; break; } }
-                    if (prev !== null && next !== null) sensorVal = (prev + next) / 2;
-                    else if (prev !== null) sensorVal = prev;
-                    else if (next !== null) sensorVal = next;
-                    else continue;
-                }
-                if (sensorVal < 0) continue;
-
-                const calcCst = calculateCSt1(manualSec, cupType);
-                if (calcCst === null) continue;
-
-                cleanedData1.push({
-                    dateTime: dateTime,
-                    manualSec: manualSec,
-                    sensorVal: sensorVal,
-                    calcCst: calcCst,
-                    difference: calcCst - sensorVal
-                });
-            }
-
-            if (cleanedData1.length === 0) return alert("No valid paired data found.");
-
-            currentData1 = [...cleanedData1];
-            document.getElementById('results1').style.display = 'block';
-            renderBaseline1();
-            renderTable1();
-            document.getElementById('specResults1').innerHTML = '';
-        }
-
-        function renderBaseline1() {
-            const cupVals = currentData1.map(d => d.manualSec);
-            const sensorVals = currentData1.map(d => d.sensorVal);
-
-            if (cupVals.length === 0) return;
-
-            const cupMin = Math.min(...cupVals).toFixed(2);
-            const cupMax = Math.max(...cupVals).toFixed(2);
-            const cupAvg = (cupVals.reduce((a,b)=>a+b,0)/cupVals.length).toFixed(2);
-            const cupStd = standardDeviation1(cupVals).toFixed(2);
-
-            const sensorMin = Math.min(...sensorVals).toFixed(1);
-            const sensorMax = Math.max(...sensorVals).toFixed(1);
-            const sensorAvg = (sensorVals.reduce((a,b)=>a+b,0)/sensorVals.length).toFixed(1);
-            const sensorStd = standardDeviation1(sensorVals).toFixed(1);
-
-            document.getElementById('baselineMetrics1').innerHTML = `
-                <div class="metric"><div class="metric-value">${cupMin}</div><div>Cup Min (s)</div></div>
-                <div class="metric"><div class="metric-value">${cupMax}</div><div>Cup Max (s)</div></div>
-                <div class="metric"><div class="metric-value">${cupAvg}</div><div>Cup Avg (s)</div></div>
-                <div class="metric"><div class="metric-value">${cupStd}</div><div>Cup Std Dev</div></div>
-                <div class="metric"><div class="metric-value">${sensorMin}</div><div>Sensor Min</div></div>
-                <div class="metric"><div class="metric-value">${sensorMax}</div><div>Sensor Max</div></div>
-                <div class="metric"><div class="metric-value">${sensorAvg}</div><div>Sensor Avg</div></div>
-                <div class="metric"><div class="metric-value">${sensorStd}</div><div>Sensor Std Dev</div></div>
-            `;
-        }
-
-        function initShiftInputs() {
-            const container = document.getElementById('shiftInputs');
-            container.innerHTML = '';
-            shiftDefinitions = [
-                { name: "Shift 1", start: "06:00", end: "14:00" },
-                { name: "Shift 2", start: "14:00", end: "22:00" }
-            ];
-            shiftDefinitions.forEach((shift, idx) => {
-                const div = document.createElement('div');
-                div.style.marginBottom = '8px';
-                div.innerHTML = `
-                    <div style="display:grid; grid-template-columns: 1.5fr 1fr 1fr 0.5fr; gap:8px; align-items:center;">
-                        <input type="text" value="${shift.name}" onchange="updateShift(${idx}, 'name', this.value)">
-                        <input type="time" value="${shift.start}" onchange="updateShift(${idx}, 'start', this.value)">
-                        <input type="time" value="${shift.end}" onchange="updateShift(${idx}, 'end', this.value)">
-                        <button onclick="removeShiftRow(${idx})" class="secondary" style="padding:6px 10px; border-radius:6px;">×</button>
-                    </div>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        function updateShift(idx, field, value) {
-            shiftDefinitions[idx][field] = value;
-        }
-
-        function addShiftRow() {
-            shiftDefinitions.push({ name: `Shift ${shiftDefinitions.length + 1}`, start: "22:00", end: "06:00" });
-            initShiftInputs();
-        }
-
-        function removeShiftRow(idx) {
-            shiftDefinitions.splice(idx, 1);
-            initShiftInputs();
-        }
-
-        function applyShifts1() {
-            if (!currentData1.length) return alert("Process data first in Tab 1.");
-
-            const resultsContainer = document.getElementById('shiftResults1');
-            resultsContainer.innerHTML = '<div class="section-title">Per-Shift Analysis</div>';
-
-            const table = document.createElement('table');
-            table.style.width = '100%';
-            table.innerHTML = `
-                <thead><tr>
-                    <th>Shift</th>
-                    <th>Points</th>
-                    <th>R²</th>
-                    <th>Regression Formula</th>
-                    <th>Mean Diff</th>
-                    <th>Std Dev Diff</th>
-                </tr></thead>
-                <tbody></tbody>
-            `;
-            const tbody = table.querySelector('tbody');
-
-            shiftDefinitions.forEach(shift => {
-                const shiftData = currentData1.filter(row => {
-                    if (!row.dateTime) return false;
-                    const timeStr = row.dateTime.split(' ')[1] || row.dateTime.split('T')[1] || '';
-                    if (!timeStr) return false;
-                    const time = timeStr.substring(0,5);
-                    return isTimeInShift(time, shift.start, shift.end);
-                });
-
-                if (shiftData.length < 3) {
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>${shift.name}</td><td colspan="5">Not enough data (<3 points)</td>`;
-                    tbody.appendChild(tr);
-                    return;
-                }
-
-                const x = shiftData.map(d => d.manualSec);
-                const y = shiftData.map(d => d.sensorVal);
-                const reg = linearRegression1(x, y);
-                const diffs = shiftData.map(d => d.difference);
-                const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-                const stdDiff = standardDeviation1(diffs);
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><strong>${shift.name}</strong></td>
-                    <td>${shiftData.length}</td>
-                    <td><strong>${reg.r2.toFixed(4)}</strong></td>
-                    <td style="font-family:monospace; font-size:0.85rem;">Sensor = ${reg.slope.toFixed(3)} × CupSec + ${reg.intercept.toFixed(1)}</td>
-                    <td>${meanDiff.toFixed(1)}</td>
-                    <td>${stdDiff.toFixed(1)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            resultsContainer.appendChild(table);
-        }
-
-        function isTimeInShift(time, start, end) {
-            const t = timeToMinutes(time);
-            const s = timeToMinutes(start);
-            const e = timeToMinutes(end);
-            if (s < e) return t >= s && t < e;
-            return t >= s || t < e; // overnight shift
-        }
-
-        function timeToMinutes(t) {
-            const [h, m] = t.split(':').map(Number);
-            return h * 60 + m;
-        }
-
-        function applyLimits1() {
-            const mLSL = parseFloat(document.getElementById('manualLSL').value);
-            const mUSL = parseFloat(document.getElementById('manualUSL').value);
-            const sLSL = parseFloat(document.getElementById('sensorLSL').value);
-            const sUSL = parseFloat(document.getElementById('sensorUSL').value);
-
-            currentData1 = cleanedData1.filter(d => {
-                let pass = true;
-                if (!isNaN(mLSL) && d.manualSec < mLSL) pass = false;
-                if (!isNaN(mUSL) && d.manualSec > mUSL) pass = false;
-                if (!isNaN(sLSL) && d.sensorVal < sLSL) pass = false;
-                if (!isNaN(sUSL) && d.sensorVal > sUSL) pass = false;
-                return pass;
-            });
-
-            renderTable1();
-
-            const total = cleanedData1.length;
-            const cupIn = cleanedData1.filter(d => (!isNaN(mLSL) && !isNaN(mUSL)) ? (d.manualSec >= mLSL && d.manualSec <= mUSL) : true).length;
-            const sensorIn = cleanedData1.filter(d => (!isNaN(sLSL) && !isNaN(sUSL)) ? (d.sensorVal >= sLSL && d.sensorVal <= sUSL) : true).length;
-
-            document.getElementById('specResults1').innerHTML = `
-                <div>Cup Seconds in spec: <strong>${cupIn} / ${total} (${((cupIn/total)*100).toFixed(1)}%)</strong></div>
-                <div>Sensor Value in spec: <strong>${sensorIn} / ${total} (${((sensorIn/total)*100).toFixed(1)}%)</strong></div>
-            `;
-        }
-
-        function resetLimits1() {
-            document.getElementById('manualLSL').value = '';
-            document.getElementById('manualUSL').value = '';
-            document.getElementById('sensorLSL').value = '';
-            document.getElementById('sensorUSL').value = '';
-            currentData1 = [...cleanedData1];
-            renderTable1();
-            document.getElementById('specResults1').innerHTML = '';
-        }
-
-        function runStrongest1() {
-            if (currentData1.length < 3) return alert("Not enough data points.");
-
-            const diffs = currentData1.map(d => d.difference);
-            const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-            const stdDiff = standardDeviation1(diffs);
-
-            const kValues = [0.5, 1.0, 1.5, 2.0];
-            let html = '<table style="width:100%; border-collapse: collapse;"><thead><tr><th>k</th><th>R²</th><th>Slope</th><th>Intercept</th><th>Formula</th><th>Points</th></tr></thead><tbody>';
-
-            kValues.forEach(k => {
-                const filtered = currentData1.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
-                if (filtered.length < 3) {
-                    html += `<tr><td>${k}</td><td colspan="5">Not enough points after filter</td></tr>`;
-                    return;
-                }
-                const x = filtered.map(d => d.manualSec);
-                const y = filtered.map(d => d.sensorVal);
-                const reg = linearRegression1(x, y);
-                const formula = `Sensor = ${reg.slope.toFixed(3)} × CupSeconds + ${reg.intercept.toFixed(1)}`;
-                html += `<tr>
-                    <td><strong>${k}</strong></td>
-                    <td><strong>${reg.r2.toFixed(4)}</strong></td>
-                    <td>${reg.slope.toFixed(3)}</td>
-                    <td>${reg.intercept.toFixed(1)}</td>
-                    <td style="font-family: monospace; font-size: 0.85rem;">${formula}</td>
-                    <td>${filtered.length}</td>
-                </tr>`;
-            });
-            html += '</tbody></table>';
-            document.getElementById('strongestResults1').innerHTML = html;
-        }
-
-        function linearRegression1(x, y) {
-            const n = x.length;
-            if (n < 2) return { slope: 0, intercept: 0, r2: 0 };
-            let sumX = 0, sumY = 0, sumXY = 0, sumX2 = 0;
-            for (let i = 0; i < n; i++) {
-                sumX += x[i]; sumY += y[i]; sumXY += x[i]*y[i]; sumX2 += x[i]*x[i];
-            }
-            const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
-            const intercept = (sumY - slope * sumX) / n;
-            let ssRes = 0, ssTot = 0;
-            const yMean = sumY / n;
-            for (let i = 0; i < n; i++) {
-                const pred = slope * x[i] + intercept;
-                ssRes += (y[i] - pred) ** 2;
-                ssTot += (y[i] - yMean) ** 2;
-            }
-            const r2 = ssTot > 0 ? 1 - (ssRes / ssTot) : 0;
-            return { slope, intercept, r2 };
-        }
-
-        function standardDeviation1(arr) {
-            if (arr.length < 2) return 0;
-            const mean = arr.reduce((a,b)=>a+b,0) / arr.length;
-            const variance = arr.reduce((a,b)=>a + Math.pow(b-mean,2),0) / arr.length;
-            return Math.sqrt(variance);
-        }
-
-        function renderTable1() {
-            const thead = document.querySelector('#resultTable1 thead');
-            const tbody = document.querySelector('#resultTable1 tbody');
-            thead.innerHTML = '';
-            tbody.innerHTML = '';
-
-            const headerRow = document.createElement('tr');
-            ['Date/Time', 'Cup Seconds', 'Sensor Value', 'Calculated cSt', 'Ratio (Calc/Sensor)', 'Difference'].forEach(text => {
-                const th = document.createElement('th');
-                th.textContent = text;
-                headerRow.appendChild(th);
-            });
-            thead.appendChild(headerRow);
-
-            currentData1.forEach(row => {
-                const tr = document.createElement('tr');
-                const ratio = row.sensorVal !== 0 ? (row.calcCst / row.sensorVal).toFixed(3) : '—';
-                tr.innerHTML = `
-                    <td>${row.dateTime}</td>
-                    <td>${row.manualSec.toFixed(2)}</td>
-                    <td>${row.sensorVal.toFixed(1)}</td>
-                    <td>${row.calcCst.toFixed(1)}</td>
-                    <td>${ratio}</td>
-                    <td>${row.difference.toFixed(1)}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function downloadCSV1() {
-            if (!currentData1.length) return;
-
-            let csv = 'DateTime,Cup_Seconds,Sensor_Value,Calculated_cSt,Ratio_CalcDivSensor,Difference\n';
-            currentData1.forEach(r => {
-                const ratio = r.sensorVal !== 0 ? (r.calcCst / r.sensorVal).toFixed(4) : '';
-                csv += `${r.dateTime},${r.manualSec},${r.sensorVal},${r.calcCst.toFixed(2)},${ratio},${r.difference.toFixed(2)}\n`;
-            });
-
-            if (currentData1.length > 3) {
-                const diffs = currentData1.map(d => d.difference);
-                const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-                const stdDiff = standardDeviation1(diffs);
-                csv += '\n# STD Filter + Linear Regression Results\n';
-                [0.5,1.0,1.5,2.0].forEach(k => {
-                    const filtered = currentData1.filter(d => Math.abs(d.difference - meanDiff) <= (k * stdDiff));
-                    if (filtered.length < 3) return;
-                    const reg = linearRegression1(filtered.map(d=>d.manualSec), filtered.map(d=>d.sensorVal));
-                    csv += `# k=${k}, R2=${reg.r2.toFixed(4)}, Slope=${reg.slope.toFixed(4)}, Intercept=${reg.intercept.toFixed(2)}, Formula=Sensor=${reg.slope.toFixed(3)}*CupSeconds+${reg.intercept.toFixed(1)}, Points=${filtered.length}\n`;
-                });
-            }
-
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = 'viscosity_cleaned_with_regression.csv';
-            a.click();
-        }
-
-        // ==================== TAB 2: ADVANCED WEEKLY ANALYSIS (UPDATED - GLOBAL MEAN ± STD) ====================
-        let weeklyData2 = [];
-        let globalMeanDiff = 0;
-        let globalStdDiff = 0;
-
-        document.getElementById('fileInput2').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-
-            Papa.parse(file, {
-                header: false,
-                skipEmptyLines: false,
-                complete: function(results) {
-                    const rows = results.data;
-                    if (rows.length < 16) {
-                        alert("File must have headers in row 15.");
-                        return;
-                    }
-                    const headers = rows[14].map(h => String(h || "").trim());
-                    
-                    // Smart column detection
-                    let dateIdx = headers.findIndex(h => h.toLowerCase().includes('date') || h.toLowerCase().includes('time'));
-                    let manualIdx = headers.findIndex(h => h.toLowerCase().includes('zahn') || h.toLowerCase().includes('cup') || h.toLowerCase().includes('manual') || h.toLowerCase().includes('seconds'));
-                    let sensorIdx = headers.findIndex(h => h.toLowerCase().includes('visc') || h.toLowerCase().includes('sensor') || h.toLowerCase().includes('inline'));
-
-                    if (dateIdx === -1 || manualIdx === -1 || sensorIdx === -1) {
-                        alert("Could not auto-detect columns. Please use Tab 1 first to process and export, then use the exported CSV here.");
-                        return;
-                    }
-
-                    const dataRows = rows.slice(15).filter(r => r.length > 2);
-
-                    // Process data (same logic as Tab 1)
-                    const processedData = [];
-                    for (let i = 0; i < dataRows.length; i++) {
-                        const row = dataRows[i];
-                        const manualSec = parseFloat(row[manualIdx]);
-                        let sensorVal = parseFloat(row[sensorIdx]);
-
-                        if (isNaN(manualSec)) continue;
-
-                        if (isNaN(sensorVal)) {
-                            let prev = null, next = null;
-                            for (let j = i-1; j>=0; j--) { const v = parseFloat(dataRows[j][sensorIdx]); if (!isNaN(v)) { prev = v; break; } }
-                            for (let j = i+1; j<dataRows.length; j++) { const v = parseFloat(dataRows[j][sensorIdx]); if (!isNaN(v)) { next = v; break; } }
-                            if (prev !== null && next !== null) sensorVal = (prev + next) / 2;
-                            else if (prev !== null) sensorVal = prev;
-                            else if (next !== null) sensorVal = next;
-                            else continue;
-                        }
-                        if (sensorVal < 0) continue;
-
-                        // Use EZ-Zahn4 as default for Tab 2 (user can change in Tab 1)
-                        const calcCst = calculateCSt1(manualSec, "EZ-Zahn4");
-                        if (calcCst === null) continue;
-
-                        processedData.push({
-                            dateTime: row[dateIdx],
-                            difference: calcCst - sensorVal
-                        });
-                    }
-
-                    if (processedData.length === 0) {
-                        alert("No valid data found after processing.");
-                        return;
-                    }
-
-                    // Calculate Global Mean and Std Dev of Difference
-                    const allDiffs = processedData.map(d => d.difference);
-                    globalMeanDiff = allDiffs.reduce((a,b)=>a+b,0) / allDiffs.length;
-                    globalStdDiff = standardDeviation2(allDiffs);
-
-                    // Group by week
-                    const weeks = {};
-                    processedData.forEach(row => {
-                        const date = new Date(row.dateTime);
-                        const weekStart = getWeekStart(date);
-                        const key = weekStart.toISOString().split('T')[0];
-                        if (!weeks[key]) weeks[key] = [];
-                        weeks[key].push(row.difference);
-                    });
-
-                    const sortedKeys = Object.keys(weeks).sort();
-                    weeklyData2 = sortedKeys.map((key, idx) => {
-                        const diffs = weeks[key];
-                        const meanDiff = diffs.reduce((a,b)=>a+b,0) / diffs.length;
-                        const stdDiff = standardDeviation2(diffs);
-
-                        // Significant jump from previous week
-                        let significantJump = false;
-                        if (idx > 0) {
-                            const prevKey = sortedKeys[idx-1];
-                            const prevDiffs = weeks[prevKey];
-                            const prevMean = prevDiffs.reduce((a,b)=>a+b,0) / prevDiffs.length;
-                            if (Math.abs(meanDiff - prevMean) > 15) significantJump = true;
-                        }
-
-                        // Classification based on GLOBAL mean ± std
-                        const deviation = Math.abs(meanDiff - globalMeanDiff) / (globalStdDiff || 1);
-                        let regime = "Drift";
-                        let color = "#f59e0b"; // Yellow
-                        if (deviation < 1.0) {
-                            regime = "Minimal Shift";
-                            color = "#22c55e"; // Green
-                        } else if (deviation > 2.0) {
-                            regime = "Significant Deviation";
-                            color = "#ef4444"; // Red
-                        }
-
-                        return {
-                            week: key,
-                            count: diffs.length,
-                            meanDiff: meanDiff,
-                            stdDiff: stdDiff,
-                            regime: regime,
-                            color: color,
-                            deviation: deviation.toFixed(2),
-                            significantJump: significantJump
-                        };
-                    });
-
-                    renderTab2();
-                }
-            });
-        });
-
-        function getWeekStart(date) {
-            const d = new Date(date);
-            const day = d.getDay();
-            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-            return new Date(d.setDate(diff));
-        }
-
-        function standardDeviation2(arr) {
-            if (arr.length < 2) return 0;
-            const mean = arr.reduce((a,b)=>a+b,0) / arr.length;
-            return Math.sqrt(arr.reduce((a,b)=>a + Math.pow(b-mean,2),0) / arr.length);
-        }
-
-        function renderTab2() {
-            document.getElementById('results2').style.display = 'block';
-
-            // Update Global Metrics
-            document.getElementById('globalMeanDiff').textContent = globalMeanDiff.toFixed(1) + " cP";
-            document.getElementById('globalStdDiff').textContent = globalStdDiff.toFixed(1) + " cP";
-
-            const greenWeeks = weeklyData2.filter(w => w.color === "#22c55e").length;
-            const yellowWeeks = weeklyData2.filter(w => w.color === "#f59e0b").length;
-            const redWeeks = weeklyData2.filter(w => w.color === "#ef4444").length;
-
-            document.getElementById('normalWeeks').textContent = greenWeeks;
-            document.getElementById('driftWeeks').textContent = yellowWeeks;
-            document.getElementById('badWeeks').textContent = redWeeks;
-
-            // Bar Chart
-            const ctxBar = document.getElementById('barChart');
-            if (window.barChartInstance) window.barChartInstance.destroy();
-            window.barChartInstance = new Chart(ctxBar, {
-                type: 'bar',
-                data: {
-                    labels: weeklyData2.map(w => w.week),
-                    datasets: [{
-                        label: 'Mean Difference (cP)',
-                        data: weeklyData2.map(w => w.meanDiff),
-                        backgroundColor: weeklyData2.map(w => w.color)
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                afterLabel: function(context) {
-                                    const w = weeklyData2[context.dataIndex];
-                                    return `Deviation from Global Mean: ${w.deviation}σ | ${w.regime}`;
-                                }
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { title: { display: true, text: 'Mean Difference (cP)' } }
-                    }
-                }
-            });
-
-            // Table
-            const thead = document.querySelector('#weeklyTable thead');
-            const tbody = document.querySelector('#weeklyTable tbody');
-            thead.innerHTML = `<tr>
-                <th>Week Starting</th>
-                <th>Mean Diff</th>
-                <th>Std Dev</th>
-                <th>Deviation from Global Mean</th>
-                <th>Classification</th>
-                <th>Big Jump from Prev Week?</th>
-                <th>Points</th>
-            </tr>`;
-            tbody.innerHTML = '';
-
-            weeklyData2.forEach(w => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${w.week}</td>
-                    <td>${w.meanDiff.toFixed(1)}</td>
-                    <td>${w.stdDiff.toFixed(1)}</td>
-                    <td><strong>${w.deviation} σ</strong></td>
-                    <td style="color:${w.color}; font-weight:700;">${w.regime}</td>
-                    <td style="color:${w.significantJump ? '#ef4444' : '#22c55e'}; font-weight:700;">${w.significantJump ? 'YES' : 'No'}</td>
-                    <td>${w.count}</td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function switchTab(tab) {
-            document.getElementById('tab1').classList.remove('active');
-            document.getElementById('tab2').classList.remove('active');
-            document.getElementById('tab1-btn').classList.remove('active');
-            document.getElementById('tab2-btn').classList.remove('active');
-
-            if (tab === 1) {
-                document.getElementById('tab1').classList.add('active');
-                document.getElementById('tab1-btn').classList.add('active');
-            } else {
-                document.getElementById('tab2').classList.add('active');
-                document.getElementById('tab2-btn').classList.add('active');
-            }
-        }
-    </script>
+<div class="container">
+<h1>Shell Control Tool v2.0</h1>
+
+<div class="card">
+<div class="section-title">Upload CSV</div>
+<input type="file" id="fileInput">
+</div>
+
+<div id="controls" class="card" style="display:none;">
+<div class="section-title">Column Mapping</div>
+<select id="dateCol"></select>
+<select id="manualCol"></select>
+<select id="sensorCol"></select>
+<select id="cupType">
+<option value="">Select Cup</option>
+<option value="EZ-Zahn4">EZ-Zahn #4</option>
+<option value="EZ-Zahn5">EZ-Zahn #5</option>
+<option value="ISO6">ISO #6</option>
+<option value="ISO8">ISO #8</option>
+</select>
+<button onclick="process()">Process</button>
+</div>
+
+<div id="results" class="card" style="display:none;">
+<div class="section-title">Best Model</div>
+<div id="bestModel"></div>
+<canvas id="chart"></canvas>
+</div>
+
+</div>
+
+<script>
+// =========================
+// STATE
+// =========================
+let rows = [];
+let headers = [];
+let data = [];
+
+// =========================
+// CUP FORMULAS (UNCHANGED)
+// =========================
+function cSt(sec, type){
+if(!sec) return null;
+switch(type){
+case "EZ-Zahn4": return 13.26*sec - (673/sec);
+case "EZ-Zahn5": return 23.56*sec - (744/sec);
+case "ISO6": return 6.9*sec - (570/sec);
+case "ISO8": return 21.78*sec - (306/sec);
+}
+}
+
+// =========================
+// CSV LOAD (ROBUST)
+// =========================
+document.getElementById('fileInput').addEventListener('change', e=>{
+Papa.parse(e.target.files[0], {
+complete: res=>{
+let r = res.data;
+
+// auto-detect header row
+let idx = [14,13,15].find(i =>
+r[i] && r[i].some(x=>String(x).toLowerCase().includes("date"))
+);
+
+headers = r[idx];
+rows = r.slice(idx+1);
+
+let selects = ["dateCol","manualCol","sensorCol"];
+selects.forEach(id=>{
+let sel = document.getElementById(id);
+sel.innerHTML="";
+headers.forEach((h,i)=>{
+let o=new Option(h,i);
+sel.add(o);
+});
+});
+
+document.getElementById("controls").style.display="block";
+}
+});
+});
+
+// =========================
+// MAIN PROCESS
+// =========================
+function process(){
+let d = parseInt(dateCol.value);
+let m = parseInt(manualCol.value);
+let s = parseInt(sensorCol.value);
+let type = cupType.value;
+
+data = [];
+
+rows.forEach(r=>{
+let sec = parseFloat(r[m]);
+let sensor = parseFloat(r[s]);
+
+if(!sec || !sensor || sensor<0) return;
+
+let calc = cSt(sec,type);
+data.push({x:sec,y:sensor,p:calc});
+});
+
+// run models
+let models = runModels(data.map(d=>d.x), data.map(d=>d.y));
+let best = models.sort((a,b)=>b.r2-a.r2)[0];
+
+document.getElementById("bestModel").innerHTML =
+"Best: "+best.name+" | R²="+best.r2.toFixed(3);
+
+renderChart(data, models);
+
+document.getElementById("results").style.display="block";
+}
+
+// =========================
+// MODELS
+// =========================
+function runModels(x,y){
+let models=[];
+
+// linear
+let lin = linear(x,y);
+models.push({name:"Linear", fn:lin.fn, r2:lin.r2});
+
+// poly2
+let p2 = poly(x,y,2);
+models.push({name:"Poly2", fn:p2.fn, r2:p2.r2});
+
+// exponential
+let exp = exponential(x,y);
+models.push({name:"Exp", fn:exp.fn, r2:exp.r2});
+
+// log
+let logm = logModel(x,y);
+models.push({name:"Log", fn:logm.fn, r2:logm.r2});
+
+// power
+let pow = power(x,y);
+models.push({name:"Power", fn:pow.fn, r2:pow.r2});
+
+return models;
+}
+
+// =========================
+// LINEAR
+// =========================
+function linear(x,y){
+let n=x.length;
+let sx=0,sy=0,sxy=0,sx2=0;
+
+for(let i=0;i<n;i++){
+sx+=x[i]; sy+=y[i];
+sxy+=x[i]*y[i];
+sx2+=x[i]*x[i];
+}
+
+let m=(n*sxy-sx*sy)/(n*sx2-sx*sx);
+let b=(sy-m*sx)/n;
+
+let fn = x=>m*x+b;
+return {fn,r2:r2(x,y,fn)};
+}
+
+// =========================
+// POLY
+// =========================
+function poly(x,y,d){
+let n=x.length;
+let X=[],Y=[];
+
+for(let i=0;i<n;i++){
+let row=[];
+for(let j=0;j<=d;j++) row.push(Math.pow(x[i],j));
+X.push(row);
+Y.push(y[i]);
+}
+
+// normal eq solve
+let XT = mathTranspose(X);
+let XT_X = mathMultiply(XT,X);
+let XT_Y = mathMultiply(XT,Y);
+
+let coef = solve(XT_X, XT_Y);
+
+let fn = x=>{
+let sum=0;
+coef.forEach((c,i)=> sum+=c*Math.pow(x,i));
+return sum;
+};
+
+return {fn, r2:r2(x,y,fn)};
+}
+
+// =========================
+// EXP / LOG / POWER
+// =========================
+function exponential(x,y){
+let X=[],Y=[];
+for(let i=0;i<x.length;i++){
+if(y[i]>0){ X.push(x[i]); Y.push(Math.log(y[i])); }
+}
+let lin = linear(X,Y);
+return {
+fn: x=>Math.exp(lin.fn(x)),
+r2:r2(x,y,x=>Math.exp(lin.fn(x)))
+};
+}
+
+function logModel(x,y){
+let X=[],Y=[];
+for(let i=0;i<x.length;i++){
+if(x[i]>0){ X.push(Math.log(x[i])); Y.push(y[i]); }
+}
+let lin = linear(X,Y);
+return {
+fn: x=>lin.fn(Math.log(x)),
+r2:r2(x,y,x=>lin.fn(Math.log(x)))
+};
+}
+
+function power(x,y){
+let X=[],Y=[];
+for(let i=0;i<x.length;i++){
+if(x[i]>0 && y[i]>0){
+X.push(Math.log(x[i]));
+Y.push(Math.log(y[i]));
+}
+}
+let lin = linear(X,Y);
+return {
+fn: x=>Math.exp(lin.fn(Math.log(x))),
+r2:r2(x,y,x=>Math.exp(lin.fn(Math.log(x))))
+};
+}
+
+// =========================
+// R2
+// =========================
+function r2(x,y,f){
+let mean = y.reduce((a,b)=>a+b,0)/y.length;
+let ssr=0,sst=0;
+for(let i=0;i<x.length;i++){
+let pred=f(x[i]);
+ssr+=(y[i]-pred)**2;
+sst+=(y[i]-mean)**2;
+}
+return 1-ssr/sst;
+}
+
+// =========================
+// MATRIX HELPERS
+// =========================
+function mathTranspose(A){
+return A[0].map((_,i)=>A.map(r=>r[i]));
+}
+function mathMultiply(A,B){
+let result=[];
+for(let i=0;i<A.length;i++){
+result[i]=[];
+for(let j=0;j<B[0].length;j++){
+let sum=0;
+for(let k=0;k<A[0].length;k++) sum+=A[i][k]*B[k][j];
+result[i][j]=sum;
+}
+}
+return result;
+}
+function solve(A,b){
+let n=A.length;
+for(let i=0;i<n;i++){
+let max=i;
+for(let j=i+1;j<n;j++){
+if(Math.abs(A[j][i])>Math.abs(A[max][i])) max=j;
+}
+[A[i],A[max]]=[A[max],A[i]];
+[b[i],b[max]]=[b[max],b[i]];
+
+for(let j=i+1;j<n;j++){
+let factor=A[j][i]/A[i][i];
+for(let k=i;k<n;k++) A[j][k]-=factor*A[i][k];
+b[j]-=factor*b[i];
+}
+}
+
+let x=new Array(n);
+for(let i=n-1;i>=0;i--){
+x[i]=b[i];
+for(let j=i+1;j<n;j++) x[i]-=A[i][j]*x[j];
+x[i]/=A[i][i];
+}
+return x;
+}
+
+// =========================
+// CHART
+// =========================
+function renderChart(data, models){
+let ctx=document.getElementById("chart");
+
+new Chart(ctx,{
+type:"scatter",
+data:{
+datasets:[
+{
+label:"Data",
+data:data,
+backgroundColor:"#00d4ff"
+},
+...models.map(m=>({
+type:"line",
+label:m.name,
+data:data.map(p=>({x:p.x,y:m.fn(p.x)})),
+borderColor:"#0f0",
+fill:false
+}))
+]
+}
+});
+}
+</script>
+
 </body>
 </html>
