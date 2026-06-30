@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Shell Control Correlation Tool v5.0</title>
+<title>Shell Control Correlation Tool v6.0</title>
 
 https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js
 <script>if(typeof Papa==='undefined'){document.write('<script src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"><\/script>');}</script>
@@ -31,25 +31,33 @@ label { display:block; margin-top:10px; color:#aaa; font-size:14px; }
 .col { flex:1; min-width:200px; }
 .slider-row { display:flex; align-items:center; gap:15px; margin-top:15px; }
 .slider-row input[type="range"] { flex:1; accent-color:#00d4ff; height:6px; }
-.slider-value { color:#00d4ff; font-weight:600; min-width:120px; text-align:right; font-size:16px; }
+.slider-value { color:#00d4ff; font-weight:600; min-width:140px; text-align:right; font-size:16px; }
 hr { border:none; border-top:1px solid #222; margin:25px 0; }
 
-/* Dual-handle range slider */
+/* Dual-handle date slider */
 .range-container { position:relative; height:50px; margin-top:15px; padding:0 11px; }
 .range-track { position:absolute; left:11px; right:11px; height:6px; background:#333; border-radius:3px; top:22px; }
 .range-selected { position:absolute; height:6px; background:#00d4ff; border-radius:3px; top:22px; }
 .range-container input[type="range"] { position:absolute; left:0; right:0; width:100%; height:6px; top:22px; background:none; pointer-events:none; -webkit-appearance:none; appearance:none; margin:0; padding:0; border:none; }
 .range-container input[type="range"]::-webkit-slider-thumb { -webkit-appearance:none; pointer-events:auto; width:22px; height:22px; background:#00d4ff; border-radius:50%; cursor:pointer; border:2px solid #0a0a0a; box-shadow:0 0 6px rgba(0,212,255,0.6); }
 .range-container input[type="range"]::-moz-range-thumb { pointer-events:auto; width:22px; height:22px; background:#00d4ff; border-radius:50%; cursor:pointer; border:2px solid #0a0a0a; box-shadow:0 0 6px rgba(0,212,255,0.6); }
-.range-container input[type="range"]::-webkit-slider-runnable-track { background:none; border:none; }
-.range-container input[type="range"]::-moz-range-track { background:none; border:none; }
 .date-labels { display:flex; justify-content:space-between; margin-top:8px; color:#00d4ff; font-weight:600; font-size:15px; padding:0 11px; }
 .date-bounds { display:flex; justify-content:space-between; margin-top:2px; color:#666; font-size:12px; padding:0 11px; }
+
+.limit-card { padding:15px; border-radius:8px; }
+.limit-card.all { background:#0a1a1f; border:1px solid #00d4ff; }
+.limit-card.active { background:#0a1f0f; border:1px solid #00ff66; }
+.limit-card h4 { margin:0 0 8px 0; }
+.limit-card .row-val { margin-top:6px; }
+
+.optimization-indicator { background:#1a1a1a; padding:10px 15px; border-radius:8px; margin-top:10px; border-left:4px solid #00d4ff; }
+.opt-bar { background:#222; height:6px; border-radius:3px; margin-top:6px; overflow:hidden; }
+.opt-bar > div { height:100%; background:linear-gradient(90deg, #00d4ff, #00ff66); }
 </style>
 </head>
 <body>
 <div class="container">
-<h1 style="color:#00d4ff;">Shell Control Correlation Tool v5.0</h1>
+<h1 style="color:#00d4ff;">Shell Control Correlation Tool v6.0</h1>
 
 <div class="card">
 <div class="section-title">1. Upload CSV File</div>
@@ -77,8 +85,8 @@ hr { border:none; border-top:1px solid #222; margin:25px 0; }
 <hr>
 <div class="section-title" style="font-size:16px;">Spec Limits on Cup Seconds</div>
 <div class="row">
-<div class="col"><label>LSL:</label><input type="number" id="lsl" step="any" placeholder="e.g., 25"></div>
-<div class="col"><label>USL:</label><input type="number" id="usl" step="any" placeholder="e.g., 45"></div>
+<div class="col"><label>LSL (Cup sec):</label><input type="number" id="lsl" step="any" placeholder="e.g., 25"></div>
+<div class="col"><label>USL (Cup sec):</label><input type="number" id="usl" step="any" placeholder="e.g., 45"></div>
 </div>
 <button onclick="processData()">Process Data</button>
 </div>
@@ -89,7 +97,7 @@ hr { border:none; border-top:1px solid #222; margin:25px 0; }
 
 <hr>
 <div class="section-title">4. Date Range Filter</div>
-<p style="color:#aaa; font-size:14px; margin:5px 0;">Drag either handle to narrow the analysis to a date window. Median difference, regression, and chart update live.</p>
+<p style="color:#aaa; font-size:14px; margin:5px 0;">Drag either handle to narrow the analysis to a date window. Median |difference|, regression, and chart update live.</p>
 <div class="range-container">
 <div class="range-track"></div>
 <div class="range-selected" id="rangeSelected"></div>
@@ -106,20 +114,27 @@ hr { border:none; border-top:1px solid #222; margin:25px 0; }
 </div>
 
 <hr>
-<div class="section-title">5. Difference Filter (Median-Centered)</div>
-<p style="color:#aaa; font-size:14px; margin:5px 0;">Tighten the window around the median difference (sensor − calculated). R² updates live.</p>
+<div class="section-title">5. Quality Filter (|Calc cSt − Sensor cP|)</div>
+<p style="color:#aaa; font-size:14px; margin:5px 0;">Tighten the absolute-difference tolerance. Points whose |calc cSt − sensor cP| exceeds the tolerance are excluded. Balances <strong>R² (fit strength)</strong> and <strong>agreement spread (accuracy)</strong>.</p>
 <div class="slider-row">
-<span style="color:#aaa;">Tolerance:</span>
+<span style="color:#aaa;">Max |diff|:</span>
 <input type="range" id="diffSlider" min="0" max="100" step="1" value="100">
 <span class="slider-value" id="sliderValue">--</span>
 </div>
+<div class="optimization-indicator">
+<div style="display:flex; justify-content:space-between; align-items:center;">
+<span style="color:#aaa; font-size:13px;">Combined quality score (R² × agreement):</span>
+<span id="qualityScore" style="color:#00d4ff; font-weight:600;">--</span>
+</div>
+<div class="opt-bar"><div id="qualityBar" style="width:0%;"></div></div>
+</div>
 
 <hr>
-<div class="section-title">6. Linear Regression Results</div>
+<div class="section-title">6. Cup → Sensor Linear Regression</div>
 <div id="regressionMetrics"></div>
 
 <hr>
-<div class="section-title">7. Recommended Sensor Limits</div>
+<div class="section-title">7. Recommended Sensor LSL / USL</div>
 <div id="recommendedLimits"></div>
 
 <div class="chart-container"><canvas id="chart"></canvas></div>
@@ -128,7 +143,7 @@ hr { border:none; border-top:1px solid #222; margin:25px 0; }
 </div>
 
 <script>
-// ===== Date helpers (UTC-consistent) =====
+// ===== Date helpers =====
 function parseDateTime(str) {
   if (!str) return null;
   const s = String(str).trim();
@@ -165,8 +180,8 @@ let headers = [];
 let pairedDataAll = [];
 let basePaired = [];
 let chartInstance = null;
-let medianDifference = 0;
-let maxAbsDeviation = 0;
+let medianAbsDiff = 0;
+let maxAbsDiff = 0;
 let cupLSL = NaN, cupUSL = NaN;
 let minDay = 0, maxDay = 0;
 
@@ -263,6 +278,9 @@ function processData() {
   const cupType = document.getElementById('cupType').value;
   cupLSL = parseFloat(document.getElementById('lsl').value);
   cupUSL = parseFloat(document.getElementById('usl').value);
+  if (isFinite(cupLSL) && isFinite(cupUSL) && cupLSL > cupUSL) {
+    const tmp = cupLSL; cupLSL = cupUSL; cupUSL = tmp;
+  }
 
   if (!cupType) { alert('Please select a Cup Type.'); return; }
 
@@ -282,12 +300,12 @@ function processData() {
     const calcCst = calculateCst(cupSec, cupType);
     if (calcCst === null || !isFinite(calcCst)) return;
     const sensorCP = interp.value;
-    const difference = sensorCP - calcCst;
+    const absDiff = Math.abs(calcCst - sensorCP); // Option C: absolute difference
     if (interp.interpolated) interpCount++;
     pairedDataAll.push({
       date: dt, day: dateToDay(dt),
       cupSec: cupSec, sensorCP: sensorCP, calcCst: calcCst,
-      difference: difference, interpolated: interp.interpolated
+      absDiff: absDiff, interpolated: interp.interpolated
     });
   });
 
@@ -296,13 +314,12 @@ function processData() {
     return;
   }
 
-  // Compute date range
+  // Date range
   const days = pairedDataAll.map(p => p.day);
   minDay = Math.min.apply(null, days);
   maxDay = Math.max.apply(null, days);
-  if (minDay === maxDay) maxDay = minDay + 1; // ensure non-zero range
+  if (minDay === maxDay) maxDay = minDay + 1;
 
-  // Configure date slider
   const dMin = document.getElementById('dateSliderMin');
   const dMax = document.getElementById('dateSliderMax');
   dMin.min = minDay; dMin.max = maxDay; dMin.step = 1; dMin.value = minDay;
@@ -312,12 +329,11 @@ function processData() {
   document.getElementById('dateMinBound').textContent = 'Min: ' + formatDate(dayToDate(minDay));
   document.getElementById('dateMaxBound').textContent = 'Max: ' + formatDate(dayToDate(maxDay));
 
-  // % In Spec (Cup) informational, based on all paired
+  // Pairing summary
   let inSpecPct = null;
   if (isFinite(cupLSL) && isFinite(cupUSL) && cupUSL > cupLSL) {
     inSpecPct = (pairedDataAll.filter(p => p.cupSec >= cupLSL && p.cupSec <= cupUSL).length / pairedDataAll.length) * 100;
   }
-
   document.getElementById('pairingMetrics').innerHTML =
     '<div class="metric"><div class="metric-label">Total Manual Readings</div><div class="metric-value">'+totalManual+'</div></div>'+
     '<div class="metric"><div class="metric-label">Valid Paired Sets</div><div class="metric-value">'+pairedDataAll.length+' / '+totalManual+'</div></div>'+
@@ -325,7 +341,7 @@ function processData() {
     '<div class="metric"><div class="metric-label">Bad/Missing Dates</div><div class="metric-value">'+badDates+'</div></div>'+
     '<div class="metric"><div class="metric-label">Full Date Range</div><div class="metric-value" style="font-size:14px;">'+formatDate(dayToDate(minDay))+' → '+formatDate(dayToDate(maxDay))+'</div></div>'+
     (inSpecPct !== null
-      ? '<div class="metric"><div class="metric-label">% In Spec (Cup s, all)</div><div class="metric-value">'+inSpecPct.toFixed(1)+'%</div></div>'
+      ? '<div class="metric"><div class="metric-label">% Cup In Spec (all)</div><div class="metric-value">'+inSpecPct.toFixed(1)+'%</div></div>'
       : '<div class="metric"><div class="metric-label">% In Spec</div><div class="metric-value" style="font-size:14px;">Enter LSL & USL</div></div>');
 
   document.getElementById('results').style.display = 'block';
@@ -333,33 +349,25 @@ function processData() {
   applyDateFilter();
 }
 
-// ===== Date Slider Logic =====
+// ===== Date Slider =====
 function onDateSliderChange(e) {
   const dMin = document.getElementById('dateSliderMin');
   const dMax = document.getElementById('dateSliderMax');
   let lo = parseInt(dMin.value);
   let hi = parseInt(dMax.value);
   if (lo > hi) {
-    if (e && e.target && e.target.id === 'dateSliderMin') {
-      lo = hi;
-      dMin.value = lo;
-    } else {
-      hi = lo;
-      dMax.value = hi;
-    }
+    if (e && e.target && e.target.id === 'dateSliderMin') { lo = hi; dMin.value = lo; }
+    else { hi = lo; dMax.value = hi; }
   }
   updateDateSliderVisuals();
   applyDateFilter();
 }
-
 function updateDateSliderVisuals() {
-  const dMin = document.getElementById('dateSliderMin');
-  const dMax = document.getElementById('dateSliderMax');
-  const lo = parseInt(dMin.value);
-  const hi = parseInt(dMax.value);
-  const totalRange = (maxDay - minDay) || 1;
-  const leftPct = ((lo - minDay) / totalRange) * 100;
-  const widthPct = ((hi - lo) / totalRange) * 100;
+  const lo = parseInt(document.getElementById('dateSliderMin').value);
+  const hi = parseInt(document.getElementById('dateSliderMax').value);
+  const total = (maxDay - minDay) || 1;
+  const leftPct = ((lo - minDay) / total) * 100;
+  const widthPct = ((hi - lo) / total) * 100;
   const sel = document.getElementById('rangeSelected');
   sel.style.left = leftPct + '%';
   sel.style.width = widthPct + '%';
@@ -367,52 +375,50 @@ function updateDateSliderVisuals() {
   document.getElementById('dateMaxLabel').textContent = formatDate(dayToDate(hi));
 }
 
+// ===== Date Filter Application =====
 function applyDateFilter() {
   const lo = parseInt(document.getElementById('dateSliderMin').value);
   const hi = parseInt(document.getElementById('dateSliderMax').value);
   basePaired = pairedDataAll.filter(p => p.day >= lo && p.day <= hi);
 
   if (basePaired.length < 3) {
-    document.getElementById('regressionMetrics').innerHTML = '<div class="warning">Not enough points in selected date range ('+basePaired.length+'). Widen the date slider.</div>';
+    document.getElementById('regressionMetrics').innerHTML = '<div class="warning">Not enough points in date range ('+basePaired.length+'). Widen the date slider.</div>';
     document.getElementById('recommendedLimits').innerHTML = '';
     renderChart([], [], null);
     return;
   }
 
-  // Recompute median difference and slider range from basePaired
-  const diffs = basePaired.map(p => p.difference).slice().sort((a,b) => a-b);
-  const mid = Math.floor(diffs.length / 2);
-  medianDifference = diffs.length % 2 === 0 ? (diffs[mid-1]+diffs[mid])/2 : diffs[mid];
+  // Median + max of absolute differences
+  const abs = basePaired.map(p => p.absDiff).slice().sort((a,b) => a-b);
+  const mid = Math.floor(abs.length / 2);
+  medianAbsDiff = abs.length % 2 === 0 ? (abs[mid-1]+abs[mid])/2 : abs[mid];
+  maxAbsDiff = abs[abs.length-1] || 1;
+  if (maxAbsDiff === 0) maxAbsDiff = 1;
 
-  maxAbsDeviation = 0;
-  basePaired.forEach(p => {
-    const d = Math.abs(p.difference - medianDifference);
-    if (d > maxAbsDeviation) maxAbsDeviation = d;
-  });
-  if (maxAbsDeviation === 0) maxAbsDeviation = 1;
-
+  // Configure tolerance slider: 0 → max(|diff|), default = max (everything in)
   const slider = document.getElementById('diffSlider');
   slider.min = 0;
-  slider.max = maxAbsDeviation;
-  slider.step = maxAbsDeviation / 200;
-  slider.value = maxAbsDeviation;
+  slider.max = maxAbsDiff;
+  slider.step = maxAbsDiff / 200;
+  slider.value = maxAbsDiff;
   slider.oninput = updateFromSlider;
 
   updateFromSlider();
 }
 
-// ===== Tolerance Slider -> Regression + Limits + Chart =====
+// ===== Quality slider (R² × agreement) =====
 function updateFromSlider() {
   const tolerance = parseFloat(document.getElementById('diffSlider').value);
-  document.getElementById('sliderValue').textContent = '± ' + tolerance.toFixed(2);
+  document.getElementById('sliderValue').textContent = '≤ ' + tolerance.toFixed(2) + ' cP';
 
-  const active = basePaired.filter(p => Math.abs(p.difference - medianDifference) <= tolerance);
-  const excluded = basePaired.filter(p => Math.abs(p.difference - medianDifference) > tolerance);
+  const active = basePaired.filter(p => p.absDiff <= tolerance);
+  const excluded = basePaired.filter(p => p.absDiff > tolerance);
 
   if (active.length < 2) {
-    document.getElementById('regressionMetrics').innerHTML =
-      '<div class="error">Not enough points in window ('+active.length+'). Widen the tolerance.</div>';
+    document.getElementById('regressionMetrics').innerHTML = '<div class="error">Not enough points ('+active.length+'). Widen tolerance.</div>';
     document.getElementById('recommendedLimits').innerHTML = '';
+    document.getElementById('qualityScore').textContent = '--';
+    document.getElementById('qualityBar').style.width = '0%';
     renderChart(active, excluded, null);
     return;
   }
@@ -422,52 +428,69 @@ function updateFromSlider() {
   const lin = linearRegression(xs, ys);
   const r2 = computeR2(xs, ys, lin.fn);
 
+  // Mean |diff| inside window (smaller is better)
+  const meanAbs = active.reduce((s,p)=>s+p.absDiff,0) / active.length;
+  // Agreement score = 1 - (meanAbs / maxAbsDiff), in [0,1]
+  const agreement = Math.max(0, Math.min(1, 1 - (meanAbs / maxAbsDiff)));
+  // Combined: R² × agreement (both 0–1), shown as percentage
+  const r2Clamped = Math.max(0, Math.min(1, r2));
+  const quality = r2Clamped * agreement;
+
+  document.getElementById('qualityScore').textContent = (quality*100).toFixed(1) + '%';
+  document.getElementById('qualityBar').style.width = (quality*100).toFixed(1) + '%';
+
   document.getElementById('regressionMetrics').innerHTML =
     '<div class="metric"><div class="metric-label">Points in Window</div><div class="metric-value">'+active.length+' / '+basePaired.length+'</div></div>'+
-    '<div class="metric"><div class="metric-label">R²</div><div class="metric-value">'+r2.toFixed(4)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">R² (cup → sensor)</div><div class="metric-value">'+r2.toFixed(4)+'</div></div>'+
+    '<div class="metric"><div class="metric-label">Mean |Δ|</div><div class="metric-value">'+meanAbs.toFixed(2)+' cP</div></div>'+
     '<div class="metric"><div class="metric-label">Slope</div><div class="metric-value">'+lin.m.toFixed(3)+'</div></div>'+
     '<div class="metric"><div class="metric-label">Intercept</div><div class="metric-value">'+lin.b.toFixed(2)+'</div></div>'+
-    '<div class="metric"><div class="metric-label">Equation</div><div class="metric-value" style="font-size:14px;">y = '+lin.m.toFixed(3)+'x + '+lin.b.toFixed(2)+'</div></div>';
+    '<div class="metric"><div class="metric-label">Equation</div><div class="metric-value" style="font-size:14px;">sensor = '+lin.m.toFixed(3)+' × cup + '+lin.b.toFixed(2)+'</div></div>';
 
-  // Recommended Sensor Limits
+  // Recommended sensor limits
   if (isFinite(cupLSL) && isFinite(cupUSL) && cupUSL > cupLSL) {
-    // All Data model on full basePaired (date-filtered)
+    // All Data Model on basePaired (date-filtered, full quality range)
     const baseXs = basePaired.map(p => p.cupSec);
     const baseYs = basePaired.map(p => p.sensorCP);
     const globalModel = linearRegression(baseXs, baseYs);
     let gLSL = globalModel.fn(cupLSL);
     let gUSL = globalModel.fn(cupUSL);
-    if (gLSL > gUSL) { const tmp = gLSL; gLSL = gUSL; gUSL = tmp; }
+    if (gLSL > gUSL) { const t = gLSL; gLSL = gUSL; gUSL = t; }
     const gIn = basePaired.filter(p => p.sensorCP >= gLSL && p.sensorCP <= gUSL).length;
     const gCov = (gIn / basePaired.length * 100).toFixed(1);
 
-    // Active model
+    // Active Model (slider-filtered)
     let aLSL = lin.fn(cupLSL);
     let aUSL = lin.fn(cupUSL);
-    if (aLSL > aUSL) { const tmp = aLSL; aLSL = aUSL; aUSL = tmp; }
+    if (aLSL > aUSL) { const t = aLSL; aLSL = aUSL; aUSL = t; }
     const aIn = active.filter(p => p.sensorCP >= aLSL && p.sensorCP <= aUSL).length;
     const aCov = (aIn / active.length * 100).toFixed(1);
 
     document.getElementById('recommendedLimits').innerHTML =
       '<div class="row">'+
         '<div class="col">'+
-          '<div style="background:#0a1a1f; padding:15px; border-radius:8px; border:1px solid #00d4ff;">'+
-            '<div style="color:#00d4ff; font-weight:600; margin-bottom:8px;">All Data Model (date-filtered)</div>'+
-            '<div style="color:#aaa; font-size:13px;">Based on '+basePaired.length+' points</div>'+
-            '<div style="margin-top:8px;"><span style="color:#888;">Sensor LSL:</span> <strong style="color:#00d4ff;">'+gLSL.toFixed(1)+' cP</strong></div>'+
-            '<div><span style="color:#888;">Sensor USL:</span> <strong style="color:#00d4ff;">'+gUSL.toFixed(1)+' cP</strong></div>'+
-            '<div style="margin-top:8px; color:#0f0;">'+gCov+'% of sensor values within range</div>'+
+          '<div class="limit-card all">'+
+            '<h4 style="color:#00d4ff;">All Data Model (date-filtered)</h4>'+
+            '<div style="color:#aaa; font-size:13px;">Cup '+cupLSL+'–'+cupUSL+' s → Sensor cP</div>'+
+            '<div class="row-val"><span style="color:#888;">Sensor LSL:</span> <strong style="color:#00d4ff;">'+gLSL.toFixed(1)+' cP</strong></div>'+
+            '<div class="row-val"><span style="color:#888;">Sensor USL:</span> <strong style="color:#00d4ff;">'+gUSL.toFixed(1)+' cP</strong></div>'+
+            '<div class="row-val" style="color:#0f0;">'+gCov+'% of sensor values within range</div>'+
+            '<div class="row-val" style="color:#666; font-size:12px;">Based on '+basePaired.length+' points</div>'+
           '</div>'+
         '</div>'+
         '<div class="col">'+
-          '<div style="background:#0a1f0f; padding:15px; border-radius:8px; border:1px solid #00ff66;">'+
-            '<div style="color:#00ff66; font-weight:600; margin-bottom:8px;">Filtered Window Model (active)</div>'+
-            '<div style="color:#aaa; font-size:13px;">Based on '+active.length+' points</div>'+
-            '<div style="margin-top:8px;"><span style="color:#888;">Sensor LSL:</span> <strong style="color:#00ff66;">'+aLSL.toFixed(1)+' cP</strong></div>'+
-            '<div><span style="color:#888;">Sensor USL:</span> <strong style="color:#00ff66;">'+aUSL.toFixed(1)+' cP</strong></div>'+
-            '<div style="margin-top:8px; color:#0f0;">'+aCov+'% of sensor values within range</div>'+
+          '<div class="limit-card active">'+
+            '<h4 style="color:#00ff66;">Quality-Filtered Model (active)</h4>'+
+            '<div style="color:#aaa; font-size:13px;">Cup '+cupLSL+'–'+cupUSL+' s → Sensor cP</div>'+
+            '<div class="row-val"><span style="color:#888;">Sensor LSL:</span> <strong style="color:#00ff66;">'+aLSL.toFixed(1)+' cP</strong></div>'+
+            '<div class="row-val"><span style="color:#888;">Sensor USL:</span> <strong style="color:#00ff66;">'+aUSL.toFixed(1)+' cP</strong></div>'+
+            '<div class="row-val" style="color:#0f0;">'+aCov+'% of sensor values within range</div>'+
+            '<div class="row-val" style="color:#666; font-size:12px;">Based on '+active.length+' points (|Δ| ≤ '+tolerance.toFixed(2)+')</div>'+
           '</div>'+
         '</div>'+
+      '</div>'+
+      '<div style="margin-top:15px; padding:12px; background:#1a1a1a; border-radius:8px; border-left:4px solid #00ff66;">'+
+        '<strong style="color:#00ff66;">💡 Recommended:</strong> <span style="color:#ccc;">Use the <strong>Quality-Filtered Model</strong> limits when the combined quality score above is &gt; 50%. They reflect higher-confidence agreement between cup and sensor. The All-Data Model is a sanity baseline.</span>'+
       '</div>';
   } else {
     document.getElementById('recommendedLimits').innerHTML = '<div class="warning">Enter Cup LSL & USL above to see recommended sensor limits.</div>';
@@ -503,7 +526,7 @@ function renderChart(active, excluded, lin) {
   if (chartInstance) chartInstance.destroy();
   const ctx = document.getElementById('chart').getContext('2d');
   const datasets = [
-    { label:'Excluded by filter', data: excluded.map(function(d){return {x:d.cupSec, y:d.sensorCP};}), backgroundColor:'rgba(150,150,150,0.35)', pointRadius:3 },
+    { label:'Excluded (|Δ| too high)', data: excluded.map(function(d){return {x:d.cupSec, y:d.sensorCP};}), backgroundColor:'rgba(150,150,150,0.35)', pointRadius:3 },
     { label:'In window', data: active.map(function(d){return {x:d.cupSec, y:d.sensorCP};}), backgroundColor:'#00d4ff', pointRadius:5 }
   ];
   if (lin && active.length >= 2) {
@@ -511,11 +534,28 @@ function renderChart(active, excluded, lin) {
     const minX = Math.min.apply(null, xs);
     const maxX = Math.max.apply(null, xs);
     datasets.push({
-      label:'Linear fit', type:'line',
+      label:'Linear fit (cup → sensor)', type:'line',
       data:[{x:minX, y:lin.fn(minX)}, {x:maxX, y:lin.fn(maxX)}],
       borderColor:'#00ff66', borderWidth:2, fill:false, pointRadius:0
     });
   }
+  // Add cup LSL/USL vertical reference lines via line dataset
+  if (isFinite(cupLSL) && isFinite(cupUSL) && cupUSL > cupLSL) {
+    const ysAll = basePaired.map(function(d){return d.sensorCP;});
+    const yMin = Math.min.apply(null, ysAll);
+    const yMax = Math.max.apply(null, ysAll);
+    datasets.push({
+      label:'Cup LSL', type:'line',
+      data:[{x:cupLSL, y:yMin}, {x:cupLSL, y:yMax}],
+      borderColor:'rgba(250,170,0,0.7)', borderWidth:1.5, borderDash:[6,4], fill:false, pointRadius:0
+    });
+    datasets.push({
+      label:'Cup USL', type:'line',
+      data:[{x:cupUSL, y:yMin}, {x:cupUSL, y:yMax}],
+      borderColor:'rgba(250,170,0,0.7)', borderWidth:1.5, borderDash:[6,4], fill:false, pointRadius:0
+    });
+  }
+
   chartInstance = new Chart(ctx, {
     type:'scatter', data:{datasets: datasets},
     options:{
